@@ -1,0 +1,47 @@
+#game-container {
+  text-align: center;
+}
+
+#grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-gap: 5px;
+  margin: 20px 0;
+  min-height: 200px; /* Ensure the grid has a minimum height */
+  width: 100%; /* Make sure the grid takes the full width */
+}
+
+.cell {
+  background-color: #f0f0f0;
+  padding: 20px;
+  font-size: 18px;
+  text-align: center;
+  border: 1px solid #ddd;
+  cursor: pointer; /* Show pointer on hover */
+}
+
+.cell:hover {
+  background-color: #e0e0e0; /* Change background on hover */
+}
+
+input[type="text"] {
+  padding: 10px;
+  font-size: 16px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+#hint {
+  font-weight: bold;
+  color: blue;
+}
+
+#message {
+  font-weight: bold;
+  margin-top: 10px;
+}
