@@ -14,10 +14,10 @@ class WordGuesserGame {
       
       this.postId = null;
       this.username = 'Guest';
-      this.gameState = {
-        cellSelections: {},
-        userSelections: {}
-      };
+      this.cellSelections = {};
+      this.currentCells = []; 
+
+      this.channel = new BroadcastChannel('game_updates');
 
       this.initGame();
   }
@@ -28,40 +28,51 @@ class WordGuesserGame {
     this.createGrid();
     this.addEventListeners();
     
-    // WebView message handling
+    // handling messages sent from devvit app 
     window.addEventListener('message', (event) => {
         try {
-            const { type, data } = JSON.parse(event.data);
-            if (type === 'initialData') {
-                const parsedData = JSON.parse(data);
-                this.postId = parsedData.postId;
-                this.username = parsedData.username;
-                
-                // If there's an existing game state, load it
-                if (parsedData.gameState) {
-                    this.gameState = parsedData.gameState;
-                    this.updateGridFromGameState();
-                }
-            } else if (type === 'updateGameState') {
-                // Handle real-time updates from other players
-                this.gameState = JSON.parse(data);
+          const { type, data} = event.data;
+          
+          if(type=='devvit-message'){
+            const{message} = data;
+          
+            if (message.type === 'initialData') {
+                const {username, currentCells} = message.data;
+                this.username = username;
+                this.currentCells = currentCells || []; 
+                this.updateGridFromGameState();
+
+            } 
+            if (message.type === 'updateGameCells') {
+                const {currentCells} = message.data;
+                this.currentCells = currentCells;
                 this.updateGridFromGameState();
             }
-        } catch (error) {
+           }
+          } catch (error) {
             console.error('Error processing message:', error);
-        }
+        
+      }
     });
+
+    this.channel.onmessage = (event) => {
+      if (event.data && event.data.type === 'updateCells') {
+        this.currentCells = event.data.cells;
+        this.updateGridFromGameState();
+      }
+    };
   }
 
   // Create the grid of words
   createGrid() {
-      this.gridContainer.innerHTML = ''; // Clear any existing grid content
+      this.gridContainer.innerHTML = ''; 
 
       this.words.forEach((word, index) => {
           const cell = document.createElement("div");
           cell.classList.add("cell");
           cell.innerText = word;
           cell.dataset.word = word;
+          cell.dataset.id = index + 1;
 
           const playerCountEl = document.createElement("div");
           playerCountEl.classList.add("cell-players");
@@ -75,19 +86,15 @@ class WordGuesserGame {
     // Update grid based on game state
     document.querySelectorAll(".cell").forEach(cell => {
         const word = cell.dataset.word;
-        const playerCountEl = cell.querySelector('.cell-players');
+        // const playerCountEl = cell.querySelector('.cell-players');
         
-        if (this.gameState.cellSelections[word]) {
-            const playerCount = Object.keys(this.gameState.cellSelections[word]).length;
-            
-            // Update cell color based on player count
-            cell.style.backgroundColor = this.getColorIntensity(playerCount);
-            
-            // Update player count
-            playerCountEl.textContent = `${playerCount} player${playerCount !== 1 ? 's' : ''}`;
-        } else {
+        if(this.currentCells.includes(word)|| this.cellSelections[word]){
+          cell.style.backgroundColor = 'green';
+        }
+        
+         else {
             cell.style.backgroundColor = '';
-            playerCountEl.textContent = '';
+            // playerCountEl.textContent = '';
         }
     });
   }
@@ -105,50 +112,53 @@ class WordGuesserGame {
     this.gridContainer.addEventListener("click", (event) => {
         const cell = event.target.closest(".cell");
         if (cell) {
-            cell.classList.toggle("selected");
-        }
+          cell.classList.toggle("selected");
+        } 
     });
 
     document.getElementById("checkAnswer").addEventListener("click", () => {
-        const selectedWords = Array.from(document.querySelectorAll(".cell.selected"))
-            .map(cell => cell.dataset.word);
+      try{
+        const selectedCells = Array.from(document.querySelectorAll(".cell.selected"))
+            .map(cell => ({ 
+              word: cell.dataset.word, 
+              id: parseInt(cell.dataset.id, 10) 
+          }));
         
-        // Update game state with user's selections
-        selectedWords.forEach(word => {
-            if (!this.gameState.cellSelections[word]) {
-                this.gameState.cellSelections[word] = {};
-            }
-            this.gameState.cellSelections[word][this.username] = true;
-        });
+        // Update cell selections
+        selectedCells.forEach(({word}) => {
+          this.cellSelections[word] = { [this.username]: true };
+      });
 
         // Add user's selections to game state
-        this.gameState.userSelections[this.username] = selectedWords;
+        // this.gameState.userSelections = this.username;
 
-        const isCorrect = this.arraysMatch(selectedWords, this.correctWords);
+      //   const isCorrect = this.arraysMatch(
+      //     selectedCells.map(item => item.word), 
+      //     this.correctWords
+      // );
 
-        if (isCorrect) {
-            this.message.style.color = "#4caf50";
-            this.message.innerText = `Congratulations, ${this.username}! You found the correct words!`;
-        } else {
-            this.message.style.color = "#d32f2f";
-            this.message.innerText = "Try again!";
-        }
+        // if (isCorrect) {
+        //     this.message.style.color = "#4caf50";
+        //     this.message.innerText = `Congratulations, ${this.username}! You found the correct words!`;
+        // } else {
+        //     this.message.style.color = "#d32f2f";
+        //     this.message.innerText = "Try again!";
+        // }
 
         // Save state and notify Devvit
-        window.ReactNativeWebView?.postMessage(JSON.stringify({
-            type: 'save-state',
+        window.parent?.postMessage({
+            type: 'saveCells',
             data: { 
-                postId: this.postId, 
-                gameState: this.gameState 
+              newCells: [...new Set([...(this.currentCells || []), ...selectedCells.map(cell=>cell.word)])], 
             }
-        }));
-
-        // Update grid visualization
+        },'*'
+      );
         this.updateGridFromGameState();
-    });
+        console.log("sent game data from webview to devvit")
 
-    document.getElementById("hint-btn").addEventListener("click", () => {
-        alert("Hint: " + this.hint);
+      }catch(error){
+        console.error('Error sending data from webview to devvit', error);
+      }
     });
   }
 

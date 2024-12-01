@@ -2,6 +2,7 @@ import { Devvit } from '@devvit/public-api';
 
 // Configure Devvit's plugins
 Devvit.configure({
+  redis: true,
   redditAPI: true,
   realtime: true
 });

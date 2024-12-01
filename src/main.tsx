@@ -1,7 +1,22 @@
 import { Devvit, useState, useAsync, useChannel } from '@devvit/public-api';
 
+type WebViewMessage =
+  | {
+      type: 'initialData';
+      data: { username: string; currentCells: string[] };
+    }
+  | {
+      type: 'saveCells';
+      data: { newCells: string[] };
+    }
+  | {
+      type: 'updateGameCells';
+      data: { currentCells: string[] };
+    };
+    
 Devvit.configure({
   redditAPI: true,
+  realtime: true,
   redis: true,
   http: true,
   media: true,
@@ -12,51 +27,75 @@ Devvit.addCustomPostType({
   height: 'tall',
   render: (context) => {
     const channel = useChannel({
-      name: 'events',
+      //Valid names can only contain letters, numbers, and underscores (_)
+      name: 'game_updates',
       onMessage: (data) => {
-        // Devvit-specific state update
-        if (typeof data === 'object' && data !== null && 'payload' in data) {
-
-          const newGameState = (data.payload as { gameState: any }).gameState;
-          setGameState(newGameState);
+        // Handle realtime updates
+        if (data && typeof data === 'object' && 'cells' in data) {
+          setCells(data.cells as string[]);
         }
       },
-      onUnsubscribed: () => { },
     });
 
-    channel.subscribe();
+    try {
+      channel.subscribe();
+    } catch (error) {
+      console.error('Channel subscription error:', error);
+    }
+
 
     // Load username 
     const [username] = useState(async () => {
       const currUser = await context.reddit.getCurrentUser();
-      return currUser?.username ?? 'Guest';
+      return currUser?.username ?? 'anon';
     });
 
     // Initialize game state from Redis
-    const [gameState, setGameState] = useState(async () => {
-      const state = await context.redis.get(`subwords:${context.postId}`) || null;
-      console.log('Initial Redis State:', state);
-      return state ? JSON.parse(state) : {
-        cellSelections: {},
-        userSelections: {}
-      };
+    const [cells, setCells] = useState(async () => {
+      const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
+      // return JSON.parse(redisCells ?? '[]');
+      return redisCells ? redisCells.split(',') : []; 
     });
 
     const [webviewVisible, setWebviewVisible] = useState(false);
     const [error, setError] = useState('');
 
+    const onMessage = async (msg: WebViewMessage) => {
+      switch (msg.type) {
+        case 'saveCells':
+          await context.redis.set(`subwords_${context.postId}`, msg.data.newCells.join(','));
+          
+          channel.send({
+            cells: msg.data.newCells
+          });
+          
+          context.ui.webView.postMessage('myWebView', {
+            type: 'updateGameCells',
+            data: {
+              currentCells: msg.data.newCells,
+            },
+          });
+          setCells(msg.data.newCells);
+          break;
+        case 'initialData':
+        case 'updateGameCells':
+          break;
+
+        default:
+          throw new Error(`Unknown message type: ${msg satisfies never}`);
+      }
+    };
+
     const onStartGame = () => {
       try {
         setWebviewVisible(true);
-        const messageData = { 
-          username, 
-          postId: context.postId,
-          gameState: gameState 
-        };
-        console.log('Sending to WebView:', messageData);
+        console.log('Sending to WebView:');
         context.ui.webView.postMessage('myWebView', {
           type: 'initialData',
-          data: JSON.stringify(messageData)
+          data: {
+            username: username,
+            currentCells: cells,
+          }
         });
       } catch (err) {
         setWebviewVisible(false);
@@ -90,26 +129,10 @@ Devvit.addCustomPostType({
             <webview
               id="myWebView"
               url="page.html"
+              onMessage={(msg)=>onMessage(msg as WebViewMessage)}
               grow
-              onMessage={async (message: any) => {
-                if (message.type === 'save-state') {
-                  const { postId, gameState } = message.data;
-                  
-                  // Save to Redis
-                  console.log('Saving to Redis:', gameState);
-                  await context.redis.set(`subwords:${postId}`, JSON.stringify(gameState));
-                  
-                  // Update local state
-                  setGameState(gameState);
-
-                  // Broadcast to real-time channel
-                  const realtimeMessage = {
-                    payload: { gameState },
-                    session: postId,
-                  };
-                  await channel.send(realtimeMessage);
-                }
-              }}
+              height={webviewVisible ? '100%' : '0%'}
+                
             />
           </vstack>
         )}
