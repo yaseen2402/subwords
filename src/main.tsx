@@ -1,4 +1,6 @@
-import { Devvit, useState, useAsync, useChannel } from '@devvit/public-api';
+import './createPost.js';
+
+import { Devvit, useState, useChannel} from '@devvit/public-api';
 
 type WebViewMessage =
   | {
@@ -18,32 +20,27 @@ Devvit.configure({
   redditAPI: true,
   realtime: true,
   redis: true,
-  http: true,
-  media: true,
 });
+
+function sessionId(): string {
+  let id = '';
+  const asciiZero = '0'.charCodeAt(0);
+  for (let i = 0; i < 4; i++) {
+    id += String.fromCharCode(Math.floor(Math.random() * 26) + asciiZero);
+  }
+  return id;
+}
+
+interface Payload {
+  type: string,
+  payload?: any,
+  session: string,
+}
 
 Devvit.addCustomPostType({
   name: 'SubWords',
   height: 'tall',
   render: (context) => {
-    const channel = useChannel({
-      //Valid names can only contain letters, numbers, and underscores (_)
-      name: 'game_updates',
-      onMessage: (data) => {
-        // Handle realtime updates
-        if (data && typeof data === 'object' && 'cells' in data) {
-          setCells(data.cells as string[]);
-        }
-      },
-    });
-
-    try {
-      channel.subscribe();
-    } catch (error) {
-      console.error('Channel subscription error:', error);
-    }
-
-
     // Load username 
     const [username] = useState(async () => {
       const currUser = await context.reddit.getCurrentUser();
@@ -53,19 +50,47 @@ Devvit.addCustomPostType({
     // Initialize game state from Redis
     const [cells, setCells] = useState(async () => {
       const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
-      // return JSON.parse(redisCells ?? '[]');
       return redisCells ? redisCells.split(',') : []; 
     });
 
     const [webviewVisible, setWebviewVisible] = useState(false);
-    const [error, setError] = useState('');
+
+    const mySession = sessionId();
+    const channel = useChannel({
+      //Valid names can only contain letters, numbers, and underscores (_)
+      name: 'game_updates',
+      onMessage: (message: any) => {
+        if (message.session === mySession) return;
+
+        console.log('Channel message received:', message);
+
+        // Update cells from channel message
+        if (message.cells) {
+          setCells(message.cells);
+
+          // Send update to WebView
+          context.ui.webView.postMessage('myWebView', {
+            type: 'devvit-message',
+            data: {
+              message: {
+                type: 'updateGameCells',
+                data: { currentCells: message.cells }
+              }
+            }
+          });
+        }
+      },
+    });
+
+    // const [error, setError] = useState('');
 
     const onMessage = async (msg: WebViewMessage) => {
       switch (msg.type) {
         case 'saveCells':
           await context.redis.set(`subwords_${context.postId}`, msg.data.newCells.join(','));
           
-          channel.send({
+          await channel.send({
+            session: mySession,
             cells: msg.data.newCells
           });
           
@@ -87,9 +112,8 @@ Devvit.addCustomPostType({
     };
 
     const onStartGame = () => {
-      try {
         setWebviewVisible(true);
-        console.log('Sending to WebView:');
+        channel.subscribe();
         context.ui.webView.postMessage('myWebView', {
           type: 'initialData',
           data: {
@@ -97,19 +121,7 @@ Devvit.addCustomPostType({
             currentCells: cells,
           }
         });
-      } catch (err) {
-        setWebviewVisible(false);
-        context.ui.showToast({ text: 'Failed to start game' });
-      }
     };
-
-    if (error) {
-      return (
-        <vstack padding="small" alignment="middle center">
-          <text color="red">{error}</text>
-        </vstack>
-      );
-    }
 
     return (
       <vstack grow padding="small">
@@ -121,21 +133,19 @@ Devvit.addCustomPostType({
           <text size="xlarge" weight="bold">
             SubWords
           </text>
-          <spacer />
           <button onPress={onStartGame}>Start</button>
         </vstack>
-        {webviewVisible && (
-          <vstack grow border="thick" borderColor="black">
+        <vstack grow={webviewVisible} height={webviewVisible ? '100%' : '0%'}>
+          <vstack border="thick" borderColor="black" height={webviewVisible ? '100%' : '0%'}>
             <webview
               id="myWebView"
               url="page.html"
               onMessage={(msg)=>onMessage(msg as WebViewMessage)}
               grow
               height={webviewVisible ? '100%' : '0%'}
-                
             />
           </vstack>
-        )}
+        </vstack>
       </vstack>
     );
   },

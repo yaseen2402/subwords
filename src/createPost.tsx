@@ -2,9 +2,7 @@ import { Devvit } from '@devvit/public-api';
 
 // Configure Devvit's plugins
 Devvit.configure({
-  redis: true,
   redditAPI: true,
-  realtime: true
 });
 
 // Adds a new menu item to the subreddit allowing to create a new post

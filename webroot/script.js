@@ -55,12 +55,12 @@ class WordGuesserGame {
       }
     });
 
-    this.channel.onmessage = (event) => {
-      if (event.data && event.data.type === 'updateCells') {
-        this.currentCells = event.data.cells;
-        this.updateGridFromGameState();
-      }
-    };
+    // this.channel.onmessage = (event) => {
+    //   if (event.data && event.data.type === 'updateCells') {
+    //     this.currentCells = event.data.cells;
+    //     this.updateGridFromGameState();
+    //   }
+    // };
   }
 
   // Create the grid of words
