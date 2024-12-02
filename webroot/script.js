@@ -54,11 +54,12 @@ class WordGuesserGame {
             }
 
             if (message.type === 'updateGameCellsForRealTime') {
-              const {currentCells} = message.data.message.data.message.data;
-              console.log('Update game cells for real time :< ', currentCells);
-              this.currentCells = currentCells || [];
+              // Simplify message extraction
+              const currentCells = message.data?.currentCells || message.data?.data?.currentCells || [];
+              console.log('Update game cells for real time', currentCells);
+              this.currentCells = currentCells;
               this.updateGridFromGameState();
-          }
+            }
            }
           } catch (error) {
             console.error('Error processing message:', error);

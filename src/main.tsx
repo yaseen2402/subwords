@@ -77,13 +77,9 @@ Devvit.addCustomPostType({
         context.ui.webView.postMessage('myWebView', {
           type: 'devvit-message',
           data: {
-            message: {
-              type: 'updateGameCellsForRealTime', 
-              data: { 
-                currentCells: message.cells,
-                session: message.session 
-              }
-            }
+            type: 'updateGameCellsForRealTime', 
+            currentCells: message.cells,
+            session: message.session 
           }
         });
         
