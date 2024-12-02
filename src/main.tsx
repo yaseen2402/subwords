@@ -78,7 +78,7 @@ Devvit.addCustomPostType({
           type: 'devvit-message',
           data: {
             message: {
-              type: 'updateGameCells', 
+              type: 'updateGameCellsForRealTime', 
               data: { 
                 currentCells: message.cells,
                 session: message.session 

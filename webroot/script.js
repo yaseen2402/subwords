@@ -52,6 +52,13 @@ class WordGuesserGame {
                 this.currentCells = currentCells || [];
                 this.updateGridFromGameState();
             }
+
+            if (message.type === 'updateGameCellsForRealTime') {
+              const {currentCells} = message.data.message.data.message.data;
+              console.log('Update game cells for real time :< ', currentCells);
+              this.currentCells = currentCells || [];
+              this.updateGridFromGameState();
+          }
            }
           } catch (error) {
             console.error('Error processing message:', error);
