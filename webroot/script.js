@@ -93,12 +93,10 @@ class WordGuesserGame {
     document.querySelectorAll(".cell").forEach(cell => {
         const word = cell.dataset.word;
         
-        // Check if the word is in currentCells or cellSelections
-        if (this.currentCells.includes(word) || this.cellSelections[word]) {
+        // Mark cell green if it's in currentCells, regardless of previous state
+        if (this.currentCells.includes(word)) {
           cell.style.backgroundColor = 'green';
           console.log(`Marking ${word} as green`);
-        } else {
-          cell.style.backgroundColor = '';
         }
     });
   }
