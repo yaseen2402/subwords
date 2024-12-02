@@ -63,7 +63,7 @@ Devvit.addCustomPostType({
     const mySession = sessionId();
     const channel = useChannel({
       name: 'game_updates',
-      onMessage: (message: GameMessage) => {
+      onMessage: (message: any) => {
         if (message.session === mySession) return;
         
         setCells(message.cells);
@@ -98,7 +98,7 @@ Devvit.addCustomPostType({
           await context.redis.set(`subwords_${context.postId}`, msg.data.newCells.join(','));
           
           await channel.send({
-            session: msg.data.session || mySession,
+            session: mySession,
             cells: msg.data.newCells
           });
           
@@ -106,7 +106,7 @@ Devvit.addCustomPostType({
             type: 'updateGameCells',
             data: {
               currentCells: msg.data.newCells,
-              session: msg.data.session || mySession
+              session: mySession
             },
           });
           setCells(msg.data.newCells);
