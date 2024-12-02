@@ -110,54 +110,41 @@ class WordGuesserGame {
   // Add event listeners for word selection
   addEventListeners() {
     this.gridContainer.addEventListener("click", (event) => {
-        const cell = event.target.closest(".cell");
-        if (cell) {
-          cell.classList.toggle("selected");
-        } 
+      const cell = event.target.closest(".cell");
+      if (cell) {
+        cell.classList.toggle("selected");
+      }
     });
 
     document.getElementById("checkAnswer").addEventListener("click", () => {
-      try{
+      try {
+        // Get all selected cells
         const selectedCells = Array.from(document.querySelectorAll(".cell.selected"))
-            .map(cell => ({ 
-              word: cell.dataset.word, 
-              id: parseInt(cell.dataset.id, 10) 
-          }));
+          .map(cell => cell.dataset.word)
+          .filter(Boolean);
+
+        if (selectedCells.length === 0) return;
+
+        // Update local state
+        this.currentCells = [...new Set([...this.currentCells, ...selectedCells])];
         
-        // Update cell selections
-        selectedCells.forEach(({word}) => {
-          this.cellSelections[word] = { [this.username]: true };
-      });
+        // Clear selections
+        document.querySelectorAll(".cell.selected").forEach(cell => {
+          cell.classList.remove("selected");
+        });
 
-        // Add user's selections to game state
-        // this.gameState.userSelections = this.username;
-
-      //   const isCorrect = this.arraysMatch(
-      //     selectedCells.map(item => item.word), 
-      //     this.correctWords
-      // );
-
-        // if (isCorrect) {
-        //     this.message.style.color = "#4caf50";
-        //     this.message.innerText = `Congratulations, ${this.username}! You found the correct words!`;
-        // } else {
-        //     this.message.style.color = "#d32f2f";
-        //     this.message.innerText = "Try again!";
-        // }
-
-        // Save state and notify Devvit
+        // Notify Devvit to sync state
         window.parent?.postMessage({
-            type: 'saveCells',
-            data: { 
-              newCells: [...new Set([...(this.currentCells || []), ...selectedCells.map(cell=>cell.word)])], 
-            }
-        },'*'
-      );
-        this.updateGridFromGameState();
-        console.log("sent game data from webview to devvit")
+          type: 'saveCells',
+          data: {
+            newCells: this.currentCells
+          }
+        }, '*');
 
-      }catch(error){
-        console.error('Error sending data from webview to devvit', error);
+        this.updateGridFromGameState();
+
+      } catch (error) {
+        console.error('Error processing selection:', error);
       }
     });
   }

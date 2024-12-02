@@ -2,6 +2,11 @@ import './createPost.js';
 
 import { Devvit, useState, useChannel} from '@devvit/public-api';
 
+interface GameMessage {
+  cells: string[];
+  session: string;
+}
+
 type WebViewMessage =
   | {
       type: 'initialData';
@@ -57,29 +62,29 @@ Devvit.addCustomPostType({
 
     const mySession = sessionId();
     const channel = useChannel({
-      //Valid names can only contain letters, numbers, and underscores (_)
       name: 'game_updates',
-      onMessage: (message: any) => {
+      onMessage: (message: GameMessage) => {
         if (message.session === mySession) return;
-
-        console.log('Channel message received:', message);
-
-        // Update cells from channel message
-        if (message.cells) {
-          setCells(message.cells);
-
-          // Send update to WebView
-          context.ui.webView.postMessage('myWebView', {
-            type: 'devvit-message',
-            data: {
-              message: {
-                type: 'updateGameCells',
-                data: { currentCells: message.cells }
-              }
+        
+        setCells(message.cells);
+        
+        // Notify webview of updates
+        context.ui.webView.postMessage('myWebView', {
+          type: 'devvit-message',
+          data: {
+            message: {
+              type: 'updateGameCells', 
+              data: { currentCells: message.cells }
             }
-          });
-        }
+          }
+        });
       },
+      onSubscribed: () => {
+        console.log('Connected to realtime channel');
+      },
+      onUnsubscribed: () => {
+        console.log('Disconnected from realtime channel');
+      }
     });
 
     // const [error, setError] = useState('');
