@@ -137,7 +137,8 @@ class WordGuesserGame {
         window.parent?.postMessage({
           type: 'saveCells',
           data: {
-            newCells: this.currentCells
+            newCells: this.currentCells,
+            session: Math.random().toString(36).substring(2) // Generate a unique session ID
           }
         }, '*');
 
