@@ -17,7 +17,7 @@ class WordGuesserGame {
       this.cellSelections = {};
       this.currentCells = []; 
 
-      // this.channel = new BroadcastChannel('game_updates');
+      this.channel = new BroadcastChannel('game_updates');
 
       this.initGame();
   }
@@ -35,7 +35,7 @@ class WordGuesserGame {
           const { type, data} = event.data;
           
           if(type=='devvit-message'){
-            console.log('Devvit message received:', data);
+            console.log('Devvit message received:', data);//the control is reaching till here hence the console message
             const{message} = data;
           
             if (message.type === 'initialData') {
@@ -48,18 +48,11 @@ class WordGuesserGame {
             } 
             if (message.type === 'updateGameCells') {
                 const {currentCells} = message.data;
-                console.log('Update game cells:', currentCells);
+                console.log('Update game cells:', currentCells);//we need to see this 
                 this.currentCells = currentCells || [];
                 this.updateGridFromGameState();
             }
 
-            if (message.type === 'updateGameCellsForRealTime') {
-              // Simplify message extraction
-              const currentCells = message.data?.currentCells || message.data?.data?.currentCells || [];
-              console.log('Update game cells for real time', currentCells);
-              this.currentCells = currentCells;
-              this.updateGridFromGameState();
-            }
            }
           } catch (error) {
             console.error('Error processing message:', error);
@@ -67,12 +60,12 @@ class WordGuesserGame {
       }
     });
 
-    // this.channel.onmessage = (event) => {
-    //   if (event.data && event.data.type === 'updateCells') {
-    //     this.currentCells = event.data.cells;
-    //     this.updateGridFromGameState();
-    //   }
-    // };
+    this.channel.onmessage = (event) => {
+      if (event.data && event.data.type === 'updateCells') {
+        this.currentCells = event.data.cells;
+        this.updateGridFromGameState();
+      }
+    };
   }
 
   // Create the grid of words
