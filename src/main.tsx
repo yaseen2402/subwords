@@ -64,7 +64,12 @@ Devvit.addCustomPostType({
     const channel = useChannel({
       name: 'game_updates',
       onMessage: (message: any) => {
-        if (message.session === mySession) return;
+        console.log('Channel received message:', message);
+        
+        if (message.session === mySession) {
+          console.log('Ignoring own message');
+          return;
+        }
         
         setCells(message.cells);
         
@@ -97,6 +102,11 @@ Devvit.addCustomPostType({
         case 'saveCells':
           await context.redis.set(`subwords_${context.postId}`, msg.data.newCells.join(','));
           
+          console.log('Sending message to channel:', {
+            session: mySession,
+            cells: msg.data.newCells
+          });
+          
           await channel.send({
             session: mySession,
             cells: msg.data.newCells
@@ -121,8 +131,10 @@ Devvit.addCustomPostType({
     };
 
     const onStartGame = () => {
+        console.log('Starting game, subscribing to channel');
         setWebviewVisible(true);
         channel.subscribe();
+        console.log('Channel subscribed');
         context.ui.webView.postMessage('myWebView', {
           type: 'initialData',
           data: {

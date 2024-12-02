@@ -30,14 +30,17 @@ class WordGuesserGame {
     
     // handling messages sent from devvit app 
     window.addEventListener('message', (event) => {
+        console.log('Received message in script:', event.data);
         try {
           const { type, data} = event.data;
           
           if(type=='devvit-message'){
+            console.log('Devvit message received:', data);
             const{message} = data;
           
             if (message.type === 'initialData') {
                 const {username, currentCells} = message.data;
+                console.log('Initial data:', {username, currentCells});
                 this.username = username;
                 this.currentCells = currentCells || []; 
                 this.updateGridFromGameState();
@@ -45,6 +48,7 @@ class WordGuesserGame {
             } 
             if (message.type === 'updateGameCells') {
                 const {currentCells} = message.data;
+                console.log('Update game cells:', currentCells);
                 this.currentCells = currentCells;
                 this.updateGridFromGameState();
             }
