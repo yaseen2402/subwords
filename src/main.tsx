@@ -86,6 +86,9 @@ Devvit.addCustomPostType({
             }
           }
         });
+        
+        // Ensure the local state is also updated
+        setCells(message.cells);
       },
       onSubscribed: () => {
         console.log('Connected to realtime channel');
@@ -112,11 +115,17 @@ Devvit.addCustomPostType({
             cells: msg.data.newCells
           });
           
+          // Ensure the message is sent to all clients and local state is updated
           context.ui.webView.postMessage('myWebView', {
-            type: 'updateGameCells',
+            type: 'devvit-message',
             data: {
-              currentCells: msg.data.newCells,
-              session: mySession
+              message: {
+                type: 'updateGameCells',
+                data: {
+                  currentCells: msg.data.newCells,
+                  session: mySession
+                }
+              }
             },
           });
           setCells(msg.data.newCells);

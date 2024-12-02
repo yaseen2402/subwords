@@ -49,7 +49,7 @@ class WordGuesserGame {
             if (message.type === 'updateGameCells') {
                 const {currentCells} = message.data;
                 console.log('Update game cells:', currentCells);
-                this.currentCells = currentCells;
+                this.currentCells = currentCells || [];
                 this.updateGridFromGameState();
             }
            }
@@ -87,18 +87,18 @@ class WordGuesserGame {
   }
 
   updateGridFromGameState() {
+    console.log('Updating grid with cells:', this.currentCells);
+    
     // Update grid based on game state
     document.querySelectorAll(".cell").forEach(cell => {
         const word = cell.dataset.word;
-        // const playerCountEl = cell.querySelector('.cell-players');
         
-        if(this.currentCells.includes(word)|| this.cellSelections[word]){
+        // Check if the word is in currentCells or cellSelections
+        if (this.currentCells.includes(word) || this.cellSelections[word]) {
           cell.style.backgroundColor = 'green';
-        }
-        
-         else {
-            cell.style.backgroundColor = '';
-            // playerCountEl.textContent = '';
+          console.log(`Marking ${word} as green`);
+        } else {
+          cell.style.backgroundColor = '';
         }
     });
   }
