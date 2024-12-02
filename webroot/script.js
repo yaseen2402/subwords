@@ -17,7 +17,7 @@ class WordGuesserGame {
       this.cellSelections = {};
       this.currentCells = []; 
 
-      this.channel = new BroadcastChannel('game_updates');
+      // this.channel = new BroadcastChannel('game_updates');
 
       this.initGame();
   }
