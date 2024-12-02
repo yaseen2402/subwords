@@ -63,7 +63,7 @@ Devvit.addCustomPostType({
     const mySession = sessionId();
     const channel = useChannel({
       name: 'game_updates',
-      onMessage: (message: GameMessage) => {
+      onMessage: (message: any) => {
         if (message.session === mySession) return;
         
         setCells(message.cells);
