@@ -8,7 +8,7 @@ class WordGuesserGame {
           "UNITY", "VIVID", "WORRY", "XENON", "YEARN",
       ];
       this.correctWords = ["APPLE", "MONEY", "PAPER"]; 
-      this.hint = "material things.";
+      this.hint = "material things";
       this.gridContainer = document.getElementById("grid");
       this.message = document.getElementById("message");
       

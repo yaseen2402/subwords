@@ -75,13 +75,15 @@ Devvit.addCustomPostType({
         
         // Notify webview of updates
         context.ui.webView.postMessage('myWebView', {
-          type: 'devvit-message',
+          // type: 'devvit-message',
+          type: 'updateGameCells',
           data: {
-            type: 'updateGameCells', 
+            // type: 'updateGameCells', 
             currentCells: message.cells,
-            session: message.session 
+            // session: message.session 
           }
         });
+        
         
         // Ensure the local state is also updated
         setCells(message.cells);
@@ -96,7 +98,7 @@ Devvit.addCustomPostType({
 
     // const [error, setError] = useState('');
 
-    const onMessage = async (msg: WebViewMessage) => {
+    const onMessage = async (msg: any) => {
       switch (msg.type) {
         case 'saveCells':
           await context.redis.set(`subwords_${context.postId}`, msg.data.newCells.join(','));
@@ -113,15 +115,12 @@ Devvit.addCustomPostType({
           
           // Ensure the message is sent to all clients and local state is updated
           context.ui.webView.postMessage('myWebView', {
-            type: 'devvit-message',
+            // type: 'devvit-message',
+            type: 'updateGameCells',
             data: {
-              message: {
-                type: 'updateGameCells',
-                data: {
+                // type: 'updateGameCells',
                   currentCells: msg.data.newCells,
                   session: mySession
-                }
-              }
             },
           });
           setCells(msg.data.newCells);
@@ -131,7 +130,7 @@ Devvit.addCustomPostType({
           break;
 
         default:
-          throw new Error(`Unknown message type: ${msg satisfies never}`);
+          throw new Error(`Unknown message type: ${msg}`);
       }
     };
 
