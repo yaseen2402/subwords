@@ -84,6 +84,7 @@ Devvit.addCustomPostType({
 
     // const [error, setError] = useState('');
 
+    //receiving messages from webview
     const onMessage = async (msg: any) => {
       switch (msg.type) {
         case 'saveCells':

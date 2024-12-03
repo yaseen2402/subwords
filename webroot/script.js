@@ -2,9 +2,9 @@ class WordGuesserGame {
   constructor() {
       this.words = [
           "APPLE", "BERRY", "CHESS", "DAISY", "EAGLE",
-          "FANCY", "GIANT", "HONEY", "IRONY", "JOKER",
+          "SUSAMONGUS", "GIANT", "HONEY", "IRONY", "JOKER",
           "KNEEL", "LUNCH", "MONEY", "NIGHT", "OASIS",
-          "PAPER", "QUIRK", "ROBIN", "SNAKE", "TIGER",
+          "PAPER", "QUIRK", "ROBIN", "CONSTANTINOPLE", "TIGER",
           "UNITY", "VIVID", "WORRY", "XENON", "YEARN",
       ];
       this.correctWords = ["APPLE", "MONEY", "PAPER"]; 
