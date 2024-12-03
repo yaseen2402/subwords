@@ -99,23 +99,25 @@ class WordGuesserGame {
   updateGridFromGameState() {
     console.log('Updating grid with cells:', this.currentCells);
     
-    // Update grid based on game state
     document.querySelectorAll(".cell").forEach(cell => {
         const word = cell.dataset.word;
         
-        // Mark cell green if it's in currentCells, regardless of previous state
         if (this.currentCells.includes(word)) {
-          cell.style.backgroundColor = 'green';
-          console.log(`Marking ${word} as green`);
+            const userCount = parseInt(cell.dataset.userCount || '0');
+            let color;
+            
+            if (userCount <= 2) {
+                color = '#90EE90'; // Light green
+            } else if (userCount <= 5) {
+                color = '#32CD32'; // Medium green
+            } else {
+                color = '#006400'; // Dark green
+            }
+            
+            cell.style.backgroundColor = color;
+            console.log(`Marking ${word} as ${color} with ${userCount} users`);
         }
     });
-  }
-
-  getColorIntensity(playerCount) {
-    // More players = darker green
-    const baseGreen = 50;
-    const intensity = Math.min(playerCount * 20 + baseGreen, 255);
-    return `rgb(${255 - intensity}, 255, ${255 - intensity})`;
   }
 
 

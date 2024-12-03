@@ -43,9 +43,20 @@ body {
 }
 
 .cell.selected {
-  background-color: #c8e6c9;
   border-color: #4caf50;
   animation: pulse 1s;
+}
+
+.cell[data-user-count="1"] {
+  background-color: #90EE90;
+}
+
+.cell[data-user-count="2"] {
+  background-color: #32CD32;
+}
+
+.cell[data-user-count="3"] {
+  background-color: #006400;
 }
 
 .cell.correct {

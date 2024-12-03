@@ -88,6 +88,13 @@ Devvit.addCustomPostType({
     const onMessage = async (msg: any) => {
       switch (msg.type) {
         case 'saveCells':
+          // Store individual cell selections with user counts
+          for (const word of msg.data.newCells) {
+            const key = `subwords_${context.postId}_${word}_users`;
+            const count = parseInt(await context.redis.get(key) || '0');
+            await context.redis.set(key, (count + 1).toString());
+          }
+          // Store overall cell selections
           await context.redis.set(`subwords_${context.postId}`, msg.data.newCells.join(','));
           
           console.log('Sending message to channel:', {
