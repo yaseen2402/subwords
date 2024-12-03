@@ -93,6 +93,8 @@ Devvit.addCustomPostType({
             const key = `subwords_${context.postId}_${word}_users`;
             const count = parseInt(await context.redis.get(key) || '0');
             await context.redis.set(key, (count + 1).toString());
+            console.log("Saving data in Redis:", { key, value: count + 1 });
+
           }
           // Store overall cell selections
           await context.redis.set(`subwords_${context.postId}`, msg.data.newCells.join(','));
@@ -106,17 +108,6 @@ Devvit.addCustomPostType({
             session: mySession,
             cells: msg.data.newCells
           });
-          
-          // Ensure the message is sent to all clients and local state is updated
-          // context.ui.webView.postMessage('myWebView', {
-          //   // type: 'devvit-message',
-          //   type: 'updateGameCells',
-          //   data: {
-          //       // type: 'updateGameCells',
-          //         currentCells: msg.data.newCells,
-          //         session: mySession
-          //   },
-          // });
 
           setCells(msg.data.newCells);
           break;

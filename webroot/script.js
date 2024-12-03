@@ -35,16 +35,12 @@ class WordGuesserGame {
           const { type, data} = event.data;
           
           if(type=='devvit-message'){
-            console.log('Devvit message received:', data);//the control is reaching till here hence the console message
-            // if(message.type !== 'initialData'){
-            //   const {currentCells} = message.data.currentCells;
-            //   this.currentCells = currentCells || [];
-            //   this.updateGridFromGameState();
+            console.log('Devvit message received:', data);
+            
             const{message} = data;
 
             
             console.log('going inside the nested message', message.data);
-            // }
           
             if (message.type === 'initialData') {
                 const {username, currentCells} = message.data;
@@ -139,8 +135,6 @@ class WordGuesserGame {
           ripple.remove();
         }, 1000);
         
-        // Play a subtle sound effect (optional)
-        this.playSelectSound();
       }
     });
 
