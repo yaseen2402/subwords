@@ -2,10 +2,18 @@ import './createPost.js';
 
 import { Devvit, useState, useChannel} from '@devvit/public-api';
 
+type WordData = {
+  word: string;
+  userCount: number;
+};
+
 type WebViewMessage =
   | {
       type: 'initialData';
-      data: { username: string; currentCells: string[] };
+      data: { 
+        username: string; 
+        currentCells: WordData[];
+      };
     }
   | {
       type: 'saveCells';
@@ -44,7 +52,18 @@ Devvit.addCustomPostType({
     // Initialize game state from Redis
     const [cells, setCells] = useState(async () => {
       const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
-      return redisCells ? redisCells.split(',') : []; 
+      if (!redisCells) return [];
+
+      // Fetch user counts for each cell
+      const cellsWithCounts: WordData[] = await Promise.all(
+        redisCells.split(',').map(async (word) => {
+          const key = `subwords_${context.postId}_${word}_users`;
+          const count = parseInt(await context.redis.get(key) || '0');
+          return { word, userCount: count };
+        })
+      );
+
+      return cellsWithCounts;
     });
 
     const [webviewVisible, setWebviewVisible] = useState(false);
@@ -89,27 +108,30 @@ Devvit.addCustomPostType({
       switch (msg.type) {
         case 'saveCells':
           // Store individual cell selections with user counts
-          for (const word of msg.data.newCells) {
-            const key = `subwords_${context.postId}_${word}_users`;
-            const count = parseInt(await context.redis.get(key) || '0');
-            await context.redis.set(key, (count + 1).toString());
-            console.log("Saving data in Redis:", { key, value: count + 1 });
+          const cellsWithCounts: WordData[] = await Promise.all(
+            msg.data.newCells.map(async (word: string) => {
+              const key = `subwords_${context.postId}_${word}_users`;
+              const count = parseInt(await context.redis.get(key) || '0');
+              await context.redis.set(key, (count + 1).toString());
+              console.log("Saving data in Redis:", { key, value: count + 1 });
+              return { word, userCount: count + 1 };
+            })
+          );
 
-          }
           // Store overall cell selections
           await context.redis.set(`subwords_${context.postId}`, msg.data.newCells.join(','));
           
           console.log('Sending message to channel:', {
             session: mySession,
-            cells: msg.data.newCells
+            cells: cellsWithCounts
           });
           
           await channel.send({
             session: mySession,
-            cells: msg.data.newCells
+            cells: cellsWithCounts
           });
 
-          setCells(msg.data.newCells);
+          setCells(cellsWithCounts);
           break;
         case 'initialData':
         case 'updateGameCells':

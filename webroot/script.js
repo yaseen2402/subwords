@@ -98,8 +98,15 @@ class WordGuesserGame {
     document.querySelectorAll(".cell").forEach(cell => {
         const word = cell.dataset.word;
         
-        if (this.currentCells.includes(word)) {
-            const userCount = parseInt(cell.dataset.userCount || '0');
+        const cellData = this.currentCells.find(c => 
+          typeof c === 'string' ? c === word : c.word === word
+        );
+        
+        if (cellData) {
+            const userCount = typeof cellData === 'string' 
+              ? 0 
+              : (cellData.userCount || 0);
+            
             let color;
             
             if (userCount <= 2) {
@@ -111,6 +118,14 @@ class WordGuesserGame {
             }
             
             cell.style.backgroundColor = color;
+            cell.dataset.userCount = userCount.toString();
+            
+            // Update user count display
+            const playerCountEl = cell.querySelector('.cell-players');
+            if (playerCountEl) {
+                playerCountEl.textContent = userCount > 0 ? `${userCount} users` : '';
+            }
+            
             console.log(`Marking ${word} as ${color} with ${userCount} users`);
         }
     });
