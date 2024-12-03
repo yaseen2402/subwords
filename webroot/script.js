@@ -124,7 +124,21 @@ class WordGuesserGame {
     this.gridContainer.addEventListener("click", (event) => {
       const cell = event.target.closest(".cell");
       if (cell) {
+        // Toggle selection with animation
         cell.classList.toggle("selected");
+        
+        // Add a ripple effect
+        const ripple = document.createElement("div");
+        ripple.classList.add("ripple");
+        cell.appendChild(ripple);
+        
+        // Remove ripple after animation
+        setTimeout(() => {
+          ripple.remove();
+        }, 1000);
+        
+        // Play a subtle sound effect (optional)
+        this.playSelectSound();
       }
     });
 
