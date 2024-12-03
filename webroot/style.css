@@ -1,11 +1,13 @@
 #game-container {
   text-align: center;
   max-width: 800px;
+  max-height: 600px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 15px;
   background: #f8f9fa;
   border-radius: 15px;
   box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  overflow-y: auto;
 }
 
 #grid {
@@ -20,8 +22,8 @@
 
 .cell {
   background-color: #ffffff;
-  padding: 25px 15px;
-  font-size: 18px;
+  padding: 15px 10px;
+  font-size: 16px;
   text-align: center;
   border-radius: 10px;
   border: 2px solid #e9ecef;
@@ -76,11 +78,11 @@ button:hover {
 #hint {
   font-weight: bold;
   color: #2196f3;
-  font-size: 18px;
-  padding: 15px;
+  font-size: 16px;
+  padding: 10px;
   background: #e3f2fd;
   border-radius: 8px;
-  margin: 20px 0;
+  margin: 15px 0;
 }
 
 #message {
