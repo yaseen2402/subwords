@@ -36,7 +36,15 @@ class WordGuesserGame {
           
           if(type=='devvit-message'){
             console.log('Devvit message received:', data);//the control is reaching till here hence the console message
+            // if(message.type !== 'initialData'){
+            //   const {currentCells} = message.data.currentCells;
+            //   this.currentCells = currentCells || [];
+            //   this.updateGridFromGameState();
             const{message} = data;
+
+            
+            console.log('going inside the nested message', message.data);
+            // }
           
             if (message.type === 'initialData') {
                 const {username, currentCells} = message.data;
@@ -47,6 +55,7 @@ class WordGuesserGame {
 
             } 
             if (message.type === 'updateGameCells') {
+                console.log("reached inside updateGameCells if statement")
                 const {currentCells} = message.data;
                 console.log('Update game cells:', currentCells);//we need to see this 
                 this.currentCells = currentCells || [];
