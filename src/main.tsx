@@ -2,11 +2,6 @@ import './createPost.js';
 
 import { Devvit, useState, useChannel} from '@devvit/public-api';
 
-interface GameMessage {
-  cells: string[];
-  session: string;
-}
-
 type WebViewMessage =
   | {
       type: 'initialData';
@@ -34,12 +29,6 @@ function sessionId(): string {
     id += String.fromCharCode(Math.floor(Math.random() * 26) + asciiZero);
   }
   return id;
-}
-
-interface Payload {
-  type: string,
-  payload?: any,
-  session: string,
 }
 
 Devvit.addCustomPostType({
@@ -75,12 +64,9 @@ Devvit.addCustomPostType({
         
         // Notify webview of updates
         context.ui.webView.postMessage('myWebView', {
-          // type: 'devvit-message',
           type: 'updateGameCells',
           data: {
-            // type: 'updateGameCells', 
             currentCells: message.cells,
-            // session: message.session 
           }
         });
         
@@ -114,15 +100,16 @@ Devvit.addCustomPostType({
           });
           
           // Ensure the message is sent to all clients and local state is updated
-          context.ui.webView.postMessage('myWebView', {
-            // type: 'devvit-message',
-            type: 'updateGameCells',
-            data: {
-                // type: 'updateGameCells',
-                  currentCells: msg.data.newCells,
-                  session: mySession
-            },
-          });
+          // context.ui.webView.postMessage('myWebView', {
+          //   // type: 'devvit-message',
+          //   type: 'updateGameCells',
+          //   data: {
+          //       // type: 'updateGameCells',
+          //         currentCells: msg.data.newCells,
+          //         session: mySession
+          //   },
+          // });
+
           setCells(msg.data.newCells);
           break;
         case 'initialData':
