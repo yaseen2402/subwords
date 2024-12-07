@@ -152,7 +152,7 @@ Devvit.addCustomPostType({
           console.log('Sent new cells to channel:', newCellsWithCounts);
           
           // Update the state with the new cells
-          setCells([...cells, ...newCellsWithCounts]);
+          setCells([...newCellsWithCounts]);
           break;
         case 'initialData':
         case 'updateGameCells':
