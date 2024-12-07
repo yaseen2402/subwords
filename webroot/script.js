@@ -127,7 +127,7 @@ class WordGuesserGame {
             } else if (userCount <= 5) {
                 color = '#32CD32'; // Medium green
             } else {
-                color = '#006400'; // Dark green
+                color = '#40c632'; // Dark green
             }
             
             cell.style.backgroundColor = color;
