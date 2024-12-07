@@ -53,12 +53,14 @@ Devvit.addCustomPostType({
     const [cells, setCells] = useState(async () => {
       const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
       if (!redisCells) return [];
+      console.log(redisCells);
 
       // Fetch user counts for each cell
       const cellsWithCounts: WordData[] = await Promise.all(
         redisCells.split(',').map(async (word) => {
           const key = `subwords_${context.postId}_${word}_users`;
           const count = parseInt(await context.redis.get(key) || '0');
+          console.log({word, userCount: count});
           return { word, userCount: count };
         })
       );

@@ -136,7 +136,7 @@ class WordGuesserGame {
             // Update user count display
             const playerCountEl = cell.querySelector('.cell-players');
             if (playerCountEl) {
-                playerCountEl.textContent = userCount > 0 ? `${userCount} users` : '';
+                playerCountEl.textContent = userCount > 0 ? `+${userCount}` : '';
             }
             
             console.log(`Marking ${word} as ${color} with ${userCount} users`);
