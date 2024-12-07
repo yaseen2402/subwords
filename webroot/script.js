@@ -89,20 +89,33 @@ class WordGuesserGame {
   }
 
   updateGridFromGameState() {
-    console.log('Updating grid with cells:', this.currentCells);
+    console.log('Updating grid with cells:', JSON.stringify(this.currentCells));
     
     document.querySelectorAll(".cell").forEach(cell => {
         const word = cell.dataset.word;
         
-        // Robust cell data finding
+        // More robust cell data finding with extensive logging
         const cellData = this.currentCells.find(c => {
-          // Handle both string and object inputs
-          if (typeof c === 'string') return c === word;
-          if (typeof c === 'object' && c !== null) return c.word === word;
+          // Extensive type checking and logging
+          console.log('Checking cell:', c, 'against word:', word);
+          
+          if (typeof c === 'string') {
+            console.log('String match:', c === word);
+            return c === word;
+          }
+          
+          if (typeof c === 'object' && c !== null) {
+            console.log('Object match:', c.word === word, 'c.word:', c.word);
+            return c.word === word;
+          }
+          
+          console.log('No match for cell:', c);
           return false;
         });
         
         if (cellData) {
+            console.log('Found cell data:', cellData);
+            
             const userCount = typeof cellData === 'string' 
               ? 0 
               : (cellData.userCount || 0);
@@ -127,6 +140,8 @@ class WordGuesserGame {
             }
             
             console.log(`Marking ${word} as ${color} with ${userCount} users`);
+        } else {
+            console.log(`No cell data found for word: ${word}`);
         }
     });
   }
