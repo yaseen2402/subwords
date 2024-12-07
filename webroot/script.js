@@ -149,15 +149,13 @@ class WordGuesserGame {
 
   // Add event listeners for word selection
   addEventListeners() {
-    let lastSelectedTime = 0;
     let selectedCell = null;
 
     this.gridContainer.addEventListener("click", (event) => {
       const cell = event.target.closest(".cell");
-      const currentTime = Date.now();
 
-      // Check if 30 seconds have passed since last selection
-      if (cell && (currentTime - lastSelectedTime >= 30000 || !selectedCell)) {
+      // Always allow cell selection before confirm button
+      if (cell) {
         // Deselect previous cell if exists
         if (selectedCell) {
           selectedCell.classList.remove("selected");
@@ -166,7 +164,6 @@ class WordGuesserGame {
         // Select new cell
         cell.classList.add("selected");
         selectedCell = cell;
-        lastSelectedTime = currentTime;
         
         // Add a ripple effect
         const ripple = document.createElement("div");
@@ -177,14 +174,6 @@ class WordGuesserGame {
         setTimeout(() => {
           ripple.remove();
         }, 1000);
-
-        // Reset selection after 30 seconds
-        setTimeout(() => {
-          if (cell === selectedCell) {
-            cell.classList.remove("selected");
-            selectedCell = null;
-          }
-        }, 30000);
       }
     });
 
@@ -206,10 +195,14 @@ class WordGuesserGame {
           }
         }, '*');
         
-        // Clear selections
-        document.querySelectorAll(".cell.selected").forEach(cell => {
-          cell.classList.remove("selected");
-        });
+        // Start 30-second timer after confirm
+        let lastSelectedTime = Date.now();
+        setTimeout(() => {
+          // Clear selections after 30 seconds
+          document.querySelectorAll(".cell.selected").forEach(cell => {
+            cell.classList.remove("selected");
+          });
+        }, 30000);
 
       } catch (error) {
         console.error('Error processing selection:', error);
