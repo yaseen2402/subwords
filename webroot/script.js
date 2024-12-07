@@ -94,9 +94,13 @@ class WordGuesserGame {
     document.querySelectorAll(".cell").forEach(cell => {
         const word = cell.dataset.word;
         
-        const cellData = this.currentCells.find(c => 
-          typeof c === 'string' ? c === word : c.word === word
-        );
+        // Robust cell data finding
+        const cellData = this.currentCells.find(c => {
+          // Handle both string and object inputs
+          if (typeof c === 'string') return c === word;
+          if (typeof c === 'object' && c !== null) return c.word === word;
+          return false;
+        });
         
         if (cellData) {
             const userCount = typeof cellData === 'string' 

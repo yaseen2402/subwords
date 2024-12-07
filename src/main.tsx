@@ -109,11 +109,13 @@ Devvit.addCustomPostType({
         case 'saveCells':
           // Store individual cell selections with user counts
           const cellsWithCounts: WordData[] = await Promise.all(
-            msg.data.newCells.map(async (word: string) => {
+            msg.data.newCells.map(async (cell: string | WordData) => {
+              // Handle both string and WordData inputs
+              const word = typeof cell === 'string' ? cell : cell.word;
               const key = `subwords_${context.postId}_${word}_users`;
               const count = parseInt(await context.redis.get(key) || '0');
               await context.redis.set(key, (count + 1).toString());
-              console.log("Saving data in Redis:", { key, value: count + 1 });
+              console.log("Saving data in Redis:", { key, value: count + 1, word });
               return { word, userCount: count + 1 };
             })
           );
@@ -131,6 +133,7 @@ Devvit.addCustomPostType({
             cells: cellsWithCounts
           });
 
+          console.log('Sent cells to channel:', cellsWithCounts);
           setCells(cellsWithCounts);
           break;
         case 'initialData':
