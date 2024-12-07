@@ -4,8 +4,7 @@ class WordGuesserGame {
           "APPLE", "BERRY", "CHESS", "DAISY", "EAGLE",
           "SUSAMONGUS", "GIANT", "HONEY", "IRONY", "JOKER",
       ];
-      this.correctWords = ["APPLE", "MONEY", "PAPER"]; 
-      this.hint = "material things";
+      this.story = "";
       this.gridContainer = document.getElementById("grid");
       this.message = document.getElementById("message");
       
@@ -21,7 +20,7 @@ class WordGuesserGame {
 
   // Initialize game
   initGame() {
-    document.getElementById("hint").innerText = this.hint;
+    document.getElementById("story").innerText = this.story;
     this.createGrid();
     this.addEventListeners();
     
