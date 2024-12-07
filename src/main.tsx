@@ -109,19 +109,13 @@ Devvit.addCustomPostType({
     const onMessage = async (msg: any) => {
       switch (msg.type) {
         case 'saveCells':
-          // Find the newly selected cells that are not already in the current state
-          const currentCellWords = cells.map(cell => cell.word);
-          const newCells = msg.data.newCells.filter(
-            (cell: string) => !currentCellWords.includes(cell)
-          );
-
-          // Store and increment only the newly selected cells
+          // Process only the newly selected cells
           const newCellsWithCounts: WordData[] = await Promise.all(
-            newCells.map(async (word: string) => {
+            msg.data.newCells.map(async (word: string) => {
               const key = `subwords_${context.postId}_${word}_users`;
               const count = parseInt(await context.redis.get(key) || '0');
               
-              // Increment count only for new cells
+              // Increment count for the new cell
               const updatedCount = count + 1;
               await context.redis.set(key, updatedCount.toString());
               
@@ -135,30 +129,30 @@ Devvit.addCustomPostType({
             })
           );
 
-          // Merge new cells with existing cells
-          const updatedCells = [
-            ...cells,
-            ...newCellsWithCounts
-          ];
-
-          // Update Redis with all cells
+          // Update Redis with the newly selected cells
+          const existingCellsStr = await context.redis.get(`subwords_${context.postId}`) || '';
+          const existingCells = existingCellsStr ? existingCellsStr.split(',') : [];
+          const updatedCellWords = [...new Set([...existingCells, ...msg.data.newCells])];
+          
           await context.redis.set(
             `subwords_${context.postId}`, 
-            updatedCells.map(cell => cell.word).join(',')
+            updatedCellWords.join(',')
           );
           
           console.log('Sending message to channel:', {
             session: mySession,
-            cells: updatedCells
+            cells: newCellsWithCounts
           });
           
           await channel.send({
             session: mySession,
-            cells: updatedCells
+            cells: newCellsWithCounts
           });
 
-          console.log('Sent updated cells to channel:', updatedCells);
-          setCells(updatedCells);
+          console.log('Sent new cells to channel:', newCellsWithCounts);
+          
+          // Update the state with the new cells
+          setCells([...cells, ...newCellsWithCounts]);
           break;
         case 'initialData':
         case 'updateGameCells':

@@ -197,24 +197,19 @@ class WordGuesserGame {
 
         if (selectedCells.length === 0) return;
 
-        // Update local state
-        this.currentCells = [...new Set([...this.currentCells, ...selectedCells])];
+        // Notify Devvit to sync state with ONLY the newly selected cells
+        window.parent?.postMessage({
+          type: 'saveCells',
+          data: {
+            newCells: selectedCells,
+            session: Math.random().toString(36).substring(2) // Generate a unique session ID
+          }
+        }, '*');
         
         // Clear selections
         document.querySelectorAll(".cell.selected").forEach(cell => {
           cell.classList.remove("selected");
         });
-
-        // Notify Devvit to sync state
-        window.parent?.postMessage({
-          type: 'saveCells',
-          data: {
-            newCells: this.currentCells,
-            session: Math.random().toString(36).substring(2) // Generate a unique session ID
-          }
-        }, '*');
-
-        this.updateGridFromGameState();
 
       } catch (error) {
         console.error('Error processing selection:', error);
