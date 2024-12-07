@@ -109,47 +109,56 @@ Devvit.addCustomPostType({
     const onMessage = async (msg: any) => {
       switch (msg.type) {
         case 'saveCells':
-          // Store individual cell selections with user counts
-          const cellsWithCounts: WordData[] = await Promise.all(
-            msg.data.newCells.map(async (cell: string | WordData) => {
-              // Ensure cell is always converted to a string
-              const word = typeof cell === 'string' 
-                ? cell 
-                : (cell.word || (typeof cell === 'object' ? JSON.stringify(cell) : String(cell)));
-              
+          // Find the newly selected cells that are not already in the current state
+          const currentCellWords = cells.map(cell => cell.word);
+          const newCells = msg.data.newCells.filter(
+            (cell: string) => !currentCellWords.includes(cell)
+          );
+
+          // Store and increment only the newly selected cells
+          const newCellsWithCounts: WordData[] = await Promise.all(
+            newCells.map(async (word: string) => {
               const key = `subwords_${context.postId}_${word}_users`;
               const count = parseInt(await context.redis.get(key) || '0');
               
-              // Only increment the count for the newly selected cell
+              // Increment count only for new cells
               const updatedCount = count + 1;
               await context.redis.set(key, updatedCount.toString());
               
-              console.log("Saving data in Redis:", { 
+              console.log("Saving new cell data in Redis:", { 
                 key, 
                 value: updatedCount, 
-                word, 
-                originalCell: cell 
+                word 
               });
               
               return { word, userCount: updatedCount };
             })
           );
 
-          // Store overall cell selections
-          await context.redis.set(`subwords_${context.postId}`, msg.data.newCells.join(','));
+          // Merge new cells with existing cells
+          const updatedCells = [
+            ...cells,
+            ...newCellsWithCounts
+          ];
+
+          // Update Redis with all cells
+          await context.redis.set(
+            `subwords_${context.postId}`, 
+            updatedCells.map(cell => cell.word).join(',')
+          );
           
           console.log('Sending message to channel:', {
             session: mySession,
-            cells: cellsWithCounts
+            cells: updatedCells
           });
           
           await channel.send({
             session: mySession,
-            cells: cellsWithCounts
+            cells: updatedCells
           });
 
-          console.log('Sent cells to channel:', cellsWithCounts);
-          setCells(cellsWithCounts);
+          console.log('Sent updated cells to channel:', updatedCells);
+          setCells(updatedCells);
           break;
         case 'initialData':
         case 'updateGameCells':
