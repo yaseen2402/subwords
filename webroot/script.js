@@ -149,11 +149,24 @@ class WordGuesserGame {
 
   // Add event listeners for word selection
   addEventListeners() {
+    let lastSelectedTime = 0;
+    let selectedCell = null;
+
     this.gridContainer.addEventListener("click", (event) => {
       const cell = event.target.closest(".cell");
-      if (cell) {
-        // Toggle selection with animation
-        cell.classList.toggle("selected");
+      const currentTime = Date.now();
+
+      // Check if 30 seconds have passed since last selection
+      if (cell && (currentTime - lastSelectedTime >= 30000 || !selectedCell)) {
+        // Deselect previous cell if exists
+        if (selectedCell) {
+          selectedCell.classList.remove("selected");
+        }
+
+        // Select new cell
+        cell.classList.add("selected");
+        selectedCell = cell;
+        lastSelectedTime = currentTime;
         
         // Add a ripple effect
         const ripple = document.createElement("div");
@@ -164,7 +177,14 @@ class WordGuesserGame {
         setTimeout(() => {
           ripple.remove();
         }, 1000);
-        
+
+        // Reset selection after 30 seconds
+        setTimeout(() => {
+          if (cell === selectedCell) {
+            cell.classList.remove("selected");
+            selectedCell = null;
+          }
+        }, 30000);
       }
     });
 
