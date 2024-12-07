@@ -3,9 +3,6 @@ class WordGuesserGame {
       this.words = [
           "APPLE", "BERRY", "CHESS", "DAISY", "EAGLE",
           "SUSAMONGUS", "GIANT", "HONEY", "IRONY", "JOKER",
-          "KNEEL", "LUNCH", "MONEY", "NIGHT", "OASIS",
-          "PAPER", "QUIRK", "ROBIN", "CONSTANTINOPLE", "TIGER",
-          "UNITY", "VIVID", "WORRY", "XENON", "YEARN",
       ];
       this.correctWords = ["APPLE", "MONEY", "PAPER"]; 
       this.hint = "material things";
