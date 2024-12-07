@@ -119,16 +119,19 @@ Devvit.addCustomPostType({
               
               const key = `subwords_${context.postId}_${word}_users`;
               const count = parseInt(await context.redis.get(key) || '0');
-              await context.redis.set(key, (count + 1).toString());
+              
+              // Only increment the count for the newly selected cell
+              const updatedCount = count + 1;
+              await context.redis.set(key, updatedCount.toString());
               
               console.log("Saving data in Redis:", { 
                 key, 
-                value: count + 1, 
+                value: updatedCount, 
                 word, 
                 originalCell: cell 
               });
               
-              return { word, userCount: count + 1 };
+              return { word, userCount: updatedCount };
             })
           );
 
