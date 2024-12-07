@@ -13,6 +13,7 @@ type WebViewMessage =
       data: { 
         username: string; 
         currentCells: WordData[];
+        story: string;
       };
     }
   | {
@@ -22,6 +23,14 @@ type WebViewMessage =
   | {
       type: 'updateGameCells';
       data: { currentCells: string[] };
+    }
+  | {
+      type: 'saveStory';
+      data: { story: string };
+    }
+  | {
+      type: 'voteWord';
+      data: { word: string };
     };
     
 Devvit.configure({
@@ -66,6 +75,52 @@ Devvit.addCustomPostType({
       );
 
       return cellsWithCounts;
+    });
+
+    const [story, setStory] = useState(async () => {
+      const redisStory = await context.redis.get(`subwords_${context.postId}_story`) || '';
+      return redisStory;
+    });
+
+    // Function to periodically check and update story with most voted word
+    const checkMostVotedWord = async () => {
+      const wordVotes: {[word: string]: number} = {};
+      const cells = await context.redis.get(`subwords_${context.postId}`) || '';
+      
+      if (cells) {
+        const words = cells.split(',');
+        for (const word of words) {
+          const voteKey = `subwords_${context.postId}_${word}_votes`;
+          const votes = parseInt(await context.redis.get(voteKey) || '0');
+          wordVotes[word] = votes;
+        }
+
+        const mostVotedWord = Object.entries(wordVotes)
+          .sort((a, b) => b[1] - a[1])[0]?.[0];
+
+        if (mostVotedWord) {
+          const currentStory = await context.redis.get(`subwords_${context.postId}_story`) || '';
+          const updatedStory = `${currentStory} ${mostVotedWord}`.trim();
+          
+          await context.redis.set(`subwords_${context.postId}_story`, updatedStory);
+          
+          // Broadcast story update
+          channel.send({
+            type: 'storyUpdate',
+            story: updatedStory
+          });
+
+          // Reset votes for the used word
+          await context.redis.set(`subwords_${context.postId}_${mostVotedWord}_votes`, '0');
+        }
+      }
+    };
+
+    // Set up periodic word voting check
+    Devvit.addSchedulerJob({
+      name: 'checkMostVotedWord',
+      runEvery: '30s',
+      job: checkMostVotedWord
     });
 
     const [webviewVisible, setWebviewVisible] = useState(false);
@@ -154,6 +209,22 @@ Devvit.addCustomPostType({
           // Update the state with the new cells
           setCells([...newCellsWithCounts]);
           break;
+        case 'saveStory':
+          const storyText = msg.data.story;
+          await context.redis.set(`subwords_${context.postId}_story`, storyText);
+          setStory(storyText);
+          
+          await channel.send({
+            type: 'storyUpdate',
+            story: storyText
+          });
+          break;
+        case 'voteWord':
+          const votedWord = msg.data.word;
+          const voteKey = `subwords_${context.postId}_${votedWord}_votes`;
+          const currentVotes = parseInt(await context.redis.get(voteKey) || '0');
+          await context.redis.set(voteKey, (currentVotes + 1).toString());
+          break;
         case 'initialData':
         case 'updateGameCells':
           break;
@@ -173,6 +244,7 @@ Devvit.addCustomPostType({
           data: {
             username: username,
             currentCells: cells,
+            story: story,
           }
         });
     };

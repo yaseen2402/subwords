@@ -20,7 +20,7 @@ class WordGuesserGame {
 
   // Initialize game
   initGame() {
-    document.getElementById("story").innerText = this.story;
+    this.storyElement = document.getElementById("story");
     this.createGrid();
     this.addEventListeners();
     
@@ -35,36 +35,42 @@ class WordGuesserGame {
             
             const{message} = data;
 
-            
             console.log('going inside the nested message', message.data);
           
             if (message.type === 'initialData') {
-                const {username, currentCells} = message.data;
-                console.log('Initial data:', {username, currentCells});
+                const {username, currentCells, story} = message.data;
+                console.log('Initial data:', {username, currentCells, story});
                 this.username = username;
                 this.currentCells = currentCells || []; 
                 this.updateGridFromGameState();
-
+                
+                // Update story
+                this.storyElement.innerText = story || '';
             } 
             if (message.type === 'updateGameCells') {
                 console.log("reached inside updateGameCells if statement")
                 const {currentCells} = message.data;
-                console.log('Update game cells:', currentCells);//we need to see this 
+                console.log('Update game cells:', currentCells);
                 this.currentCells = currentCells || [];
                 this.updateGridFromGameState();
             }
-
            }
           } catch (error) {
             console.error('Error processing message:', error);
-        
-      }
+        }
     });
 
     this.channel.onmessage = (event) => {
-      if (event.data && event.data.type === 'updateCells') {
-        this.currentCells = event.data.cells;
-        this.updateGridFromGameState();
+      if (event.data) {
+        switch (event.data.type) {
+          case 'updateCells':
+            this.currentCells = event.data.cells;
+            this.updateGridFromGameState();
+            break;
+          case 'storyUpdate':
+            this.storyElement.innerText = event.data.story;
+            break;
+        }
       }
     };
   }
@@ -195,6 +201,14 @@ class WordGuesserGame {
           }
         }, '*');
         
+        // Vote for selected words
+        selectedCells.forEach(word => {
+          window.parent?.postMessage({
+            type: 'voteWord',
+            data: { word }
+          }, '*');
+        });
+        
         // Start 30-second timer after confirm
         let lastSelectedTime = Date.now();
         setTimeout(() => {
@@ -207,6 +221,15 @@ class WordGuesserGame {
       } catch (error) {
         console.error('Error processing selection:', error);
       }
+    });
+
+    // Story input event listener
+    document.getElementById("storyInput").addEventListener("change", (event) => {
+      const storyText = event.target.value;
+      window.parent?.postMessage({
+        type: 'saveStory',
+        data: { story: storyText }
+      }, '*');
     });
   }
 
