@@ -117,11 +117,11 @@ Devvit.addCustomPostType({
     };
 
     // Set up periodic word voting check
-    Devvit.addSchedulerJob({
-      name: 'checkMostVotedWord',
-      runEvery: '30s',
-      job: checkMostVotedWord
-    });
+    // Devvit.addSchedulerJob({
+    //   name: 'checkMostVotedWord',
+    //   runEvery: '30s',
+    //   job: checkMostVotedWord
+    // });
 
     const [webviewVisible, setWebviewVisible] = useState(false);
 
