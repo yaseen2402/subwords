@@ -54,6 +54,11 @@ class WordGuesserGame {
                 this.currentCells = currentCells || [];
                 this.updateGridFromGameState();
             }
+
+            if(message.type === 'updateStory'){
+              console.log("reached inside updateStory if statement")
+
+            }
            }
           } catch (error) {
             console.error('Error processing message:', error);
@@ -94,6 +99,9 @@ class WordGuesserGame {
       });
   }
 
+  updateTextField(){
+    console.log("updating textField with latest story")
+  }
   updateGridFromGameState() {
     console.log('Updating grid with cells:', JSON.stringify(this.currentCells));
     

@@ -49,7 +49,7 @@ function sessionId(): string {
 }
 
 Devvit.addSchedulerJob({
-  name: 'MostVotedWordCheck',
+  name: 'CheckMostVotedWord',
   onRun: async (_, context) => {
     console.log('VotedWordCheck job started');
     
@@ -92,11 +92,10 @@ Devvit.addSchedulerJob({
         await context.redis.set(`subwords_${context.postId}_${mostVotedWord}_votes`, '0');
 
         // Broadcast story update
-        const channel = context.realtime.channel('game_updates');
-        await channel.send({
-          type: 'storyUpdate',
-          story: updatedStory
+        await context.realtime.send('updateStory', {
+          message: 'Update from scheduler'
         });
+        
 
         console.log('Story update broadcasted');
       } else {
@@ -104,6 +103,23 @@ Devvit.addSchedulerJob({
       }
     } else {
       console.log('No cells found in Redis');
+    }
+  },
+});
+
+Devvit.addTrigger({
+  event: 'AppInstall',
+  onEvent: async (_, context) => {
+    try {
+      const jobId = await context.scheduler.runJob({
+        cron: '*/30 * * * * *',
+        name: 'CheckMostVotedWord',
+        data: {},
+      });
+      await context.redis.set('jobId', jobId);
+    } catch (e) {
+      console.log('error was not able to schedule:', e);
+      throw e;
     }
   },
 });
@@ -148,6 +164,19 @@ Devvit.addCustomPostType({
     const [webviewVisible, setWebviewVisible] = useState(false);
 
     const mySession = sessionId();
+
+    const channel2 = useChannel({
+      name: 'updateStory',
+      onMessage: (data) => {
+        // Update local state if needed
+        context.ui.webView.postMessage('myWebView', {
+          type: 'updateTextField',
+          data: data
+        });
+      },
+    });
+    
+    channel2.subscribe();
     const channel = useChannel({
       name: 'game_updates',
       onMessage: (message: any) => {
@@ -168,7 +197,6 @@ Devvit.addCustomPostType({
           }
         });
         
-        
         // Ensure the local state is also updated
         setCells(message.cells);
       },
@@ -180,8 +208,9 @@ Devvit.addCustomPostType({
       }
     });
 
-    // const [error, setError] = useState('');
 
+    
+    channel.subscribe();
     //receiving messages from webview
     const onMessage = async (msg: any) => {
       switch (msg.type) {
