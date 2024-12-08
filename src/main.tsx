@@ -203,7 +203,9 @@ Devvit.addCustomPostType({
       if (redisCells) {
         const cellsWithCounts: WordData[] = await Promise.all(
           redisCells.split(',')
-            .filter((word: string) => word && word.trim() !== '') // Filter out empty or undefined words
+            .filter((word: string | undefined): word is string => 
+              word !== undefined && word.trim() !== ''
+            )
             .map(async (word: string) => {
               const key = `subwords_${context.postId}_${word}_users`;
               const count = parseInt(await context.redis.get(key) || '0');
@@ -225,7 +227,9 @@ Devvit.addCustomPostType({
         await context.redis.set(`subwords_${context.postId}_all_words`, generatedWords.slice(10).join(','));
 
         const cellsWithCounts: WordData[] = initialWords
-          .filter(word => word && word.trim() !== '') // Ensure only valid words are used
+          .filter((word: string | undefined): word is string => 
+            word !== undefined && word.trim() !== ''
+          )
           .map(word => ({
             word,
             userCount: 0
