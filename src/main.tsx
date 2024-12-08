@@ -49,7 +49,7 @@ function sessionId(): string {
 }
 
 Devvit.addSchedulerJob({
-  name: 'VotedWordCheck',
+  name: 'MostVotedWordCheck',
   onRun: async (_, context) => {
     console.log('VotedWordCheck job started');
     
@@ -106,7 +106,6 @@ Devvit.addSchedulerJob({
       console.log('No cells found in Redis');
     }
   },
-  cron: '*/30 * * * * *' // Run every 30 seconds
 });
 
 Devvit.addCustomPostType({
