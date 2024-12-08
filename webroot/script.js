@@ -73,7 +73,11 @@ class WordGuesserGame {
             this.updateGridFromGameState();
             break;
           case 'storyUpdate':
-            this.storyElement.innerText = event.data.story;
+            console.log('Received story update via channel:', event.data);
+            // Support both direct story and word+story formats
+            const storyToDisplay = event.data.story || 
+                                   (event.data.word ? `${this.storyElement.innerText} ${event.data.word}` : '');
+            this.storyElement.innerText = storyToDisplay.trim();
             break;
         }
       }

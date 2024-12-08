@@ -309,8 +309,16 @@ Devvit.addCustomPostType({
           await context.redis.set(`subwords_${context.postId}_story`, storyText);
           setStory(storyText);
           
+          // Broadcast story update to realtime channel
           await channel.send({
             type: 'storyUpdate',
+            story: storyText
+          });
+
+          // Also send to the updateStory channel for broader compatibility
+          await channel2.send({
+            type: 'storyUpdate',
+            word: storyText,
             story: storyText
           });
           break;
