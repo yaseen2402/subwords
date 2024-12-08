@@ -110,15 +110,20 @@ Devvit.addSchedulerJob({
 });
 
 Devvit.addTrigger({
-  event: 'AppInstall',
-  onEvent: async (_, context) => {
+  event: 'PostCreate',
+  onEvent: async (event, context) => {
+    if (!event.post || !event.post.id) {
+      console.error('Post data is missing from the event');
+      return;
+    }
+    
     try {
       const jobId = await context.scheduler.runJob({
         cron: '*/30 * * * * *',
         name: 'CheckMostVotedWord',
-        data: {},
+        data: { postId: event.post.id },
       });
-      await context.redis.set('jobId', jobId);
+      await context.redis.set(`jobId_${event.post.id}`, jobId);
     } catch (e) {
       console.log('error was not able to schedule:', e);
       throw e;
