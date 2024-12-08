@@ -48,6 +48,44 @@ function sessionId(): string {
   return id;
 }
 
+Devvit.addSchedulerJob({
+  name: 'VotedWordCheck',
+  onRun: async (_, context) => {
+    const wordVotes: {[word: string]: number} = {};
+    const cells = await context.redis.get(`subwords_${context.postId}`) || '';
+    
+    if (cells) {
+      const words = cells.split(',');
+      for (const word of words) {
+        const voteKey = `subwords_${context.postId}_${word}_votes`;
+        const votes = parseInt(await context.redis.get(voteKey) || '0');
+        wordVotes[word] = votes;
+      }
+
+      const mostVotedWord = Object.entries(wordVotes)
+        .sort((a, b) => b[1] - a[1])[0]?.[0];
+
+      if (mostVotedWord) {
+        const currentStory = await context.redis.get(`subwords_${context.postId}_story`) || '';
+        const updatedStory = `${currentStory} ${mostVotedWord}`.trim();
+        
+        await context.redis.set(`subwords_${context.postId}_story`, updatedStory);
+        
+        // Reset votes for the used word
+        await context.redis.set(`subwords_${context.postId}_${mostVotedWord}_votes`, '0');
+
+        // Broadcast story update
+        const channel = context.realtime.channel('game_updates');
+        await channel.send({
+          type: 'storyUpdate',
+          story: updatedStory
+        });
+      }
+    }
+  },
+  cron: '*/30 * * * * *' // Run every 30 seconds
+});
+
 Devvit.addCustomPostType({
   name: 'SubWords',
   height: 'tall',
@@ -83,43 +121,7 @@ Devvit.addCustomPostType({
     });
 
     // Set up periodic word voting check
-    Devvit.addSchedulerJob({
-      name: 'VotedWordCheck',
-      onRun: async (_, context) => {
-        const wordVotes: {[word: string]: number} = {};
-        const cells = await context.redis.get(`subwords_${context.postId}`) || '';
-        
-        if (cells) {
-          const words = cells.split(',');
-          for (const word of words) {
-            const voteKey = `subwords_${context.postId}_${word}_votes`;
-            const votes = parseInt(await context.redis.get(voteKey) || '0');
-            wordVotes[word] = votes;
-          }
-
-          const mostVotedWord = Object.entries(wordVotes)
-            .sort((a, b) => b[1] - a[1])[0]?.[0];
-
-          if (mostVotedWord) {
-            const currentStory = await context.redis.get(`subwords_${context.postId}_story`) || '';
-            const updatedStory = `${currentStory} ${mostVotedWord}`.trim();
-            
-            await context.redis.set(`subwords_${context.postId}_story`, updatedStory);
-            
-            // Reset votes for the used word
-            await context.redis.set(`subwords_${context.postId}_${mostVotedWord}_votes`, '0');
-
-            // Broadcast story update
-            const channel = context.realtime.channel('game_updates');
-            await channel.send({
-              type: 'storyUpdate',
-              story: updatedStory
-            });
-          }
-        }
-      },
-      cron: '*/30 * * * * *' // Run every 30 seconds
-    });
+  
 
     const [webviewVisible, setWebviewVisible] = useState(false);
 
