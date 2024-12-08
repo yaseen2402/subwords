@@ -1,7 +1,7 @@
 import './createPost.js';
 
 import { Devvit, useState, useChannel} from '@devvit/public-api';
-import { fetchRecentPostTitles, generateWordsFromTitles } from './fetchRecentPosts';
+import { fetchRecentPostTitles, generateWordsFromTitles } from '../server/fetchRecentPosts.js';
 
 type WordData = {
   word: string;
