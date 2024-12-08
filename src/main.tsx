@@ -83,7 +83,7 @@ Devvit.addCustomPostType({
     });
 
     // Function to periodically check and update story with most voted word
-    const checkMostVotedWord = async () => {
+    const VotedWordCheck = async () => {
       const wordVotes: {[word: string]: number} = {};
       const cells = await context.redis.get(`subwords_${context.postId}`) || '';
       
@@ -118,7 +118,7 @@ Devvit.addCustomPostType({
 
     // Set up periodic word voting check
     Devvit.addSchedulerJob({
-      name: 'checkMostVotedWord',
+      name: 'VotedWordCheck',
       onRun: async (_, context) => {
         const wordVotes: {[word: string]: number} = {};
         const cells = await context.redis.get(`subwords_${context.postId}`) || '';
