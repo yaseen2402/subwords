@@ -72,6 +72,7 @@ class WordGuesserGame {
       if (event.data) {
         switch (event.data.type) {
           case 'updateCells':
+            console.log('Received cell update:', event.data.cells);
             this.currentCells = event.data.cells;
             this.updateGridFromGameState();
             break;

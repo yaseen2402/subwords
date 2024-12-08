@@ -351,42 +351,36 @@ Devvit.addCustomPostType({
           const existingCellsStr = await context.redis.get(`subwords_${context.postId}`) || '';
           const existingCells = existingCellsStr ? existingCellsStr.split(',') : [];
           
-          // Replace used words with new words from the pool
-          const updatedCells = existingCells.map(existingWord => 
-            msg.data.newCells.includes(existingWord) && allWords.length > 0
-              ? allWords.shift()
-              : existingWord
-          );
-
-          // Update Redis with new cell configuration
-          await context.redis.set(
-            `subwords_${context.postId}`, 
-            updatedCells.join(',')
-          );
-
-          // Store remaining words back in Redis
-          await context.redis.set(
-            `subwords_${context.postId}_all_words`, 
-            allWords.join(',')
-          );
-          
+          // Do NOT replace words immediately
           const updatedCellsWithCounts: WordData[] = await Promise.all(
-            updatedCells
+            existingCells
               .filter((word): word is string => word !== undefined && word.trim() !== '')
               .map(async (word: string) => {
                 const key = `subwords_${context.postId}_${word}_users`;
                 const count = parseInt(await context.redis.get(key) || '0');
-                return { word, userCount: count };
+                const updatedCount = msg.data.newCells.includes(word) ? count + 1 : count;
+                await context.redis.set(key, updatedCount.toString());
+                return { word, userCount: updatedCount };
               })
           );
 
+          // Broadcast to all clients
           await channel.send({
+            type: 'updateCells',
             session: mySession,
             cells: updatedCellsWithCounts
           });
           
           // Update the state with the new cells
           setCells(updatedCellsWithCounts);
+
+          // Also send to webview for immediate update
+          context.ui.webView.postMessage('myWebView', {
+            type: 'updateGameCells',
+            data: {
+              currentCells: updatedCellsWithCounts
+            }
+          });
           break;
         case 'saveStory':
           const storyText = msg.data.story;
