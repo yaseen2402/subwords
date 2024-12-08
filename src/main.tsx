@@ -361,11 +361,13 @@ Devvit.addCustomPostType({
           );
           
           const updatedCellsWithCounts: WordData[] = await Promise.all(
-            updatedCells.map(async (word) => {
-              const key = `subwords_${context.postId}_${word}_users`;
-              const count = parseInt(await context.redis.get(key) || '0');
-              return { word, userCount: count };
-            })
+            updatedCells
+              .filter((word): word is string => word !== undefined && word.trim() !== '')
+              .map(async (word: string) => {
+                const key = `subwords_${context.postId}_${word}_users`;
+                const count = parseInt(await context.redis.get(key) || '0');
+                return { word, userCount: count };
+              })
           );
 
           await channel.send({
