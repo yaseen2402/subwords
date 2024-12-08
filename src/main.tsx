@@ -202,11 +202,13 @@ Devvit.addCustomPostType({
       const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
       if (redisCells) {
         const cellsWithCounts: WordData[] = await Promise.all(
-          redisCells.split(',').map(async (word) => {
-            const key = `subwords_${context.postId}_${word}_users`;
-            const count = parseInt(await context.redis.get(key) || '0');
-            return { word, userCount: count };
-          })
+          redisCells.split(',')
+            .filter(word => word && word.trim() !== '') // Filter out empty or undefined words
+            .map(async (word) => {
+              const key = `subwords_${context.postId}_${word}_users`;
+              const count = parseInt(await context.redis.get(key) || '0');
+              return { word, userCount: count };
+            })
         );
         return cellsWithCounts;
       }
@@ -222,10 +224,12 @@ Devvit.addCustomPostType({
         // Store remaining words in Redis for future use
         await context.redis.set(`subwords_${context.postId}_all_words`, generatedWords.slice(10).join(','));
 
-        const cellsWithCounts: WordData[] = initialWords.map(word => ({
-          word,
-          userCount: 0
-        }));
+        const cellsWithCounts: WordData[] = initialWords
+          .filter(word => word && word.trim() !== '') // Ensure only valid words are used
+          .map(word => ({
+            word,
+            userCount: 0
+          }));
 
         // Store initial words in Redis
         await context.redis.set(`subwords_${context.postId}`, initialWords.join(','));
