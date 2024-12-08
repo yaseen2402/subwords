@@ -62,16 +62,23 @@ export async function useGemini(context: TriggerContext, prompt: string) {
       .map((word: string) => word.trim().toUpperCase())
       .filter((word: string) => word.length > 2 && word.length < 10);
 
+    console.log('Generated Words from Gemini:', words);
+    console.log('Total Generated Words:', words.length);
+    console.log('Prompt Used:', prompt);
+
     return words.slice(0, 100);
   } catch (error) {
     console.error('Error using Gemini:', error);
     
     // Fallback words if generation fails
-    return [
+    const fallbackWords = [
       "APPLE", "BERRY", "CHESS", "DAISY", "EAGLE", 
       "GIANT", "HONEY", "IRONY", "JOKER", "KARMA",
       "LIGHT", "MAGIC", "NOBLE", "OCEAN", "PEACE"
     ];
+
+    console.log('Using Fallback Words:', fallbackWords);
+    return fallbackWords;
   }
 }
 
