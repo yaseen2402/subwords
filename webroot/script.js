@@ -56,8 +56,8 @@ class WordGuesserGame {
             }
 
             if(message.type === 'updateStory'){
-              console.log("reached inside updateStory if statement")
-
+              console.log("Received story update message", message.data);
+              this.updateTextField(message.data);
             }
            }
           } catch (error) {
@@ -99,8 +99,14 @@ class WordGuesserGame {
       });
   }
 
-  updateTextField(){
-    console.log("updating textField with latest story")
+  updateTextField(data) {
+    console.log("Updating text field with latest story", data);
+    if (data && data.word) {
+      // Append the most voted word to the story
+      const currentStory = this.storyElement.innerText;
+      const updatedStory = `${currentStory} ${data.word}`.trim();
+      this.storyElement.innerText = updatedStory;
+    }
   }
   updateGridFromGameState() {
     console.log('Updating grid with cells:', JSON.stringify(this.currentCells));

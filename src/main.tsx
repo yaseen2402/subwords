@@ -91,9 +91,11 @@ Devvit.addSchedulerJob({
         // Reset votes for the used word
         await context.redis.set(`subwords_${context.postId}_${mostVotedWord}_votes`, '0');
 
-        // Broadcast story update
+        // Broadcast story update with more context
         await context.realtime.send('updateStory', {
-          message: 'Update from scheduler'
+          type: 'storyUpdate',
+          word: mostVotedWord,
+          story: updatedStory
         });
         
 
