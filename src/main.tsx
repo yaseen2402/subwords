@@ -116,12 +116,12 @@ Devvit.addSchedulerJob({
       if (mostVotedWord) {
         const currentStory = await context.redis.get(`subwords_${postId}_story`) || '';
         const updatedStory = `${currentStory} ${mostVotedWord}`.trim();
-        
+          
         console.log('Current story:', currentStory);
         console.log('Updated story:', updatedStory);
-        
+          
         await context.redis.set(`subwords_${postId}_story`, updatedStory);
-        
+          
         // Reset votes for the used word
         await context.redis.set(`subwords_${postId}_${mostVotedWord}_votes`, '0');
 
@@ -141,6 +141,19 @@ Devvit.addSchedulerJob({
           // Update Redis with new cells and remaining words
           await context.redis.set(`subwords_${postId}`, currentCells.join(','));
           await context.redis.set(`subwords_${postId}_all_words`, allWords.join(','));
+
+          // Broadcast cell update with new word
+          try {
+            await context.realtime.send('game_updates', {
+              type: 'updateCells',
+              cells: currentCells.map(word => ({
+                word,
+                userCount: 0  // Reset user count for new word
+              }))
+            });
+          } catch (error) {
+            console.error('Failed to broadcast cell update', error);
+          }
         }
 
         // Broadcast story update with more context

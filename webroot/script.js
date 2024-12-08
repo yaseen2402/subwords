@@ -119,31 +119,25 @@ class WordGuesserGame {
   updateGridFromGameState() {
     console.log('Updating grid with cells:', JSON.stringify(this.currentCells));
     
+    // Clear existing grid
+    this.gridContainer.innerHTML = '';
+    
+    // Recreate grid with new cells
+    this.words = this.currentCells.map(cell => 
+      typeof cell === 'string' ? cell : cell.word
+    );
+    
+    this.createGrid();
+    
     document.querySelectorAll(".cell").forEach(cell => {
         const word = cell.dataset.word;
         
-        // More robust cell data finding with extensive logging
         const cellData = this.currentCells.find(c => {
-          // Extensive type checking and logging
-          console.log('Checking cell:', c, 'against word:', word);
-          
-          if (typeof c === 'string') {
-            console.log('String match:', c === word);
-            return c === word;
-          }
-          
-          if (typeof c === 'object' && c !== null) {
-            console.log('Object match:', c.word === word, 'c.word:', c.word);
-            return c.word === word;
-          }
-          
-          console.log('No match for cell:', c);
-          return false;
+          if (typeof c === 'string') return c === word;
+          return c.word === word;
         });
         
         if (cellData) {
-            console.log('Found cell data:', cellData);
-            
             const userCount = typeof cellData === 'string' 
               ? 0 
               : (cellData.userCount || 0);
@@ -161,15 +155,10 @@ class WordGuesserGame {
             cell.style.backgroundColor = color;
             cell.dataset.userCount = userCount.toString();
             
-            // Update user count display
             const playerCountEl = cell.querySelector('.cell-players');
             if (playerCountEl) {
                 playerCountEl.textContent = userCount > 0 ? `+${userCount}` : '';
             }
-            
-            console.log(`Marking ${word} as ${color} with ${userCount} users`);
-        } else {
-            console.log(`No cell data found for word: ${word}`);
         }
     });
   }
