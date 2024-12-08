@@ -125,6 +125,24 @@ Devvit.addSchedulerJob({
         // Reset votes for the used word
         await context.redis.set(`subwords_${postId}_${mostVotedWord}_votes`, '0');
 
+        // Remove the used word from current cells
+        const currentCellsStr = await context.redis.get(`subwords_${postId}`) || '';
+        const currentCells = currentCellsStr.split(',').filter(word => word !== mostVotedWord);
+
+        // Get remaining words from all words
+        const allWordsStr = await context.redis.get(`subwords_${postId}_all_words`) || '';
+        const allWords = allWordsStr.split(',');
+
+        // Add a new word if available
+        if (allWords.length > 0) {
+          const newWord = allWords.shift(); // Take first word
+          currentCells.push(newWord);
+
+          // Update Redis with new cells and remaining words
+          await context.redis.set(`subwords_${postId}`, currentCells.join(','));
+          await context.redis.set(`subwords_${postId}_all_words`, allWords.join(','));
+        }
+
         // Broadcast story update with more context
         try {
           await context.realtime.send('updateStory', {
@@ -210,9 +228,13 @@ Devvit.addCustomPostType({
     const [cells, setCells] = useState(async () => {
       // First, check if words are already in Redis
       const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
+      const allWordsStr = await context.redis.get(`subwords_${context.postId}_all_words`) || '';
+      const allWords = allWordsStr ? allWordsStr.split(',') : [];
+
       if (redisCells) {
+        const existingCells = redisCells.split(',');
         const cellsWithCounts: WordData[] = await Promise.all(
-          redisCells.split(',')
+          existingCells
             .filter((word: string | undefined): word is string => 
               word !== undefined && word.trim() !== ''
             )
@@ -222,6 +244,27 @@ Devvit.addCustomPostType({
               return { word, userCount: count };
             })
         );
+
+        // If cells are low, replenish from remaining words
+        if (cellsWithCounts.length < 5 && allWords.length > 0) {
+          const newWords = allWords.slice(0, 5 - cellsWithCounts.length);
+          const newCellsWithCounts = await Promise.all(
+            newWords.map(async (word: string) => ({
+              word,
+              userCount: 0
+            }))
+          );
+
+          // Update Redis with new words
+          const updatedCells = [...existingCells, ...newWords];
+          await context.redis.set(`subwords_${context.postId}`, updatedCells.join(','));
+          await context.redis.set(`subwords_${context.postId}_all_words`, 
+            allWords.slice(5 - cellsWithCounts.length).join(',')
+          );
+
+          return [...cellsWithCounts, ...newCellsWithCounts];
+        }
+
         return cellsWithCounts;
       }
 
