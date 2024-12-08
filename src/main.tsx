@@ -114,13 +114,29 @@ Devvit.addSchedulerJob({
         await context.redis.set(`subwords_${postId}_${mostVotedWord}_votes`, '0');
 
         // Broadcast story update with more context
-        await context.realtime.send('updateStory', {
-          type: 'storyUpdate',
-          word: mostVotedWord,
-          story: updatedStory
-        });
-        
-        console.log('Story update broadcasted');
+        try {
+          await context.realtime.send('updateStory', {
+            type: 'storyUpdate',
+            word: mostVotedWord,
+            story: updatedStory
+          });
+          console.log('Story update broadcasted');
+        } catch (realtimeError) {
+          console.error('Failed to send realtime event', {
+            error: realtimeError,
+            message: {
+              word: mostVotedWord,
+              story: updatedStory
+            }
+          });
+
+          // Fallback: Use Redis as a backup communication method
+          await context.redis.set(`subwords_${postId}_last_story_update`, JSON.stringify({
+            word: mostVotedWord,
+            story: updatedStory,
+            timestamp: new Date().toISOString()
+          }));
+        }
       } else {
         console.log('No words with votes found');
       }
