@@ -452,38 +452,36 @@ Devvit.addCustomPostType({
           break;
         case 'saveCells':
           // Process only the newly selected cells
-          const newCellsWithCounts: WordData[] = await Promise.all(
-            msg.data.newCells.map(async (word: string) => {
-              const key = `subwords_${context.postId}_${word}_users`;
-              const count = parseInt(await context.redis.get(key) || '0');
-              
-              // Increment count for the new cell
-              const updatedCount = count + 1;
-              await context.redis.set(key, updatedCount.toString());
-              
-              return { word, userCount: updatedCount };
-            })
-          );
-
-          // Retrieve all generated words
-          const allWordsStr = await context.redis.get(`subwords_${context.postId}_all_words`) || '';
-          const allWords = allWordsStr ? allWordsStr.split(',') : [];
-
-          // Update Redis with the newly selected cells
           const existingCellsStr = await context.redis.get(`subwords_${context.postId}`) || '';
           const existingCells = existingCellsStr ? existingCellsStr.split(',') : [];
-          
-          // Do NOT replace words immediately
+
+          // Validate that new cells are actually in the current game cells
+          const validNewCells = msg.data.newCells.filter((word: string) => 
+            existingCells.includes(word)
+          );
+
           const updatedCellsWithCounts: WordData[] = await Promise.all(
-            existingCells
-              .filter((word): word is string => word !== undefined && word.trim() !== '')
-              .map(async (word: string) => {
-                const key = `subwords_${context.postId}_${word}_users`;
-                const count = parseInt(await context.redis.get(key) || '0');
-                const updatedCount = msg.data.newCells.includes(word) ? count + 1 : count;
-                await context.redis.set(key, updatedCount.toString());
-                return { word, userCount: updatedCount };
-              })
+            existingCells.map(async (word: string) => {
+              const key = `subwords_${context.postId}_${word}_users`;
+              const voteKey = `subwords_${context.postId}_${word}_votes`;
+              
+              const userCount = parseInt(await context.redis.get(key) || '0');
+              const voteCount = parseInt(await context.redis.get(voteKey) || '0');
+              
+              const isNewlySelected = validNewCells.includes(word);
+              
+              // Only increment if the word is newly selected
+              const updatedUserCount = isNewlySelected ? userCount + 1 : userCount;
+              const updatedVoteCount = isNewlySelected ? voteCount + 1 : voteCount;
+              
+              await context.redis.set(key, updatedUserCount.toString());
+              await context.redis.set(voteKey, updatedVoteCount.toString());
+              
+              return { 
+                word, 
+                userCount: updatedUserCount 
+              };
+            })
           );
 
           // Broadcast to all clients
