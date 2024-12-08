@@ -69,14 +69,14 @@ Devvit.addSchedulerJob({
     const wordVotes: {[word: string]: number} = {};
     const cells = await context.redis.get(`subwords_${postId}`) || '';
     
-    console.log('Cells from Redis:', cells, 'for postId:', event.data.postId);
+    console.log('Cells from Redis:', cells, 'for postId:', postId);
     
     if (cells) {
       const words = cells.split(',');
       console.log('Words to check:', words);
       
       for (const word of words) {
-        const voteKey = `subwords_${context.postId}_${word}_votes`;
+        const voteKey = `subwords_${postId}_${word}_votes`;
         const votes = parseInt(await context.redis.get(voteKey) || '0');
         
         console.log(`Detailed vote check for ${word}:`, {
@@ -102,16 +102,16 @@ Devvit.addSchedulerJob({
       console.log('Most voted word:', mostVotedWord);
 
       if (mostVotedWord) {
-        const currentStory = await context.redis.get(`subwords_${context.postId}_story`) || '';
+        const currentStory = await context.redis.get(`subwords_${postId}_story`) || '';
         const updatedStory = `${currentStory} ${mostVotedWord}`.trim();
         
         console.log('Current story:', currentStory);
         console.log('Updated story:', updatedStory);
         
-        await context.redis.set(`subwords_${context.postId}_story`, updatedStory);
+        await context.redis.set(`subwords_${postId}_story`, updatedStory);
         
         // Reset votes for the used word
-        await context.redis.set(`subwords_${context.postId}_${mostVotedWord}_votes`, '0');
+        await context.redis.set(`subwords_${postId}_${mostVotedWord}_votes`, '0');
 
         // Broadcast story update with more context
         await context.realtime.send('updateStory', {
@@ -120,7 +120,6 @@ Devvit.addSchedulerJob({
           story: updatedStory
         });
         
-
         console.log('Story update broadcasted');
       } else {
         console.log('No words with votes found');
