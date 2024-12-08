@@ -1,4 +1,4 @@
-import { Context } from '@devvit/public-api';
+import { Context, TriggerContext } from '@devvit/public-api';
 
 export async function fetchRecentPostTitles(context: Context) {
   try {
@@ -26,10 +26,10 @@ export async function fetchRecentPostTitles(context: Context) {
   }
 }
 
-export async function useGemini(context: Context, prompt: string) {
+export async function useGemini(context: TriggerContext, prompt: string) {
   try {
     // Replace with your actual Gemini API endpoint and key
-    const response = await context.http.fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
