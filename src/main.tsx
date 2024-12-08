@@ -50,13 +50,21 @@ function sessionId(): string {
 
 Devvit.addSchedulerJob({
   name: 'CheckMostVotedWord',
-  onRun: async (_, context) => {
-    console.log('VotedWordCheck job started');
+  onRun: async (event, context) => {
+    console.log('VotedWordCheck job started', {
+      postId: event.data?.postId || 'No postId',
+      timestamp: new Date().toISOString()
+    });
     
+    if (!event.data?.postId) {
+      console.error('No postId provided to CheckMostVotedWord job');
+      return;
+    }
+
     const wordVotes: {[word: string]: number} = {};
-    const cells = await context.redis.get(`subwords_${context.postId}`) || '';
+    const cells = await context.redis.get(`subwords_${event.data.postId}`) || '';
     
-    console.log('Cells from Redis:', cells);
+    console.log('Cells from Redis:', cells, 'for postId:', event.data.postId);
     
     if (cells) {
       const words = cells.split(',');
@@ -121,11 +129,18 @@ Devvit.addTrigger({
       const jobId = await context.scheduler.runJob({
         cron: '*/30 * * * * *',
         name: 'CheckMostVotedWord',
-        data: { postId: event.post.id },
+        data: { 
+          postId: event.post.id,
+          createdAt: new Date().toISOString()
+        },
+      });
+      console.log('Scheduled CheckMostVotedWord job', {
+        jobId,
+        postId: event.post.id
       });
       await context.redis.set(`jobId_${event.post.id}`, jobId);
     } catch (e) {
-      console.log('error was not able to schedule:', e);
+      console.error('Error scheduling job:', e);
       throw e;
     }
   },
