@@ -136,11 +136,13 @@ Devvit.addSchedulerJob({
         // Add a new word if available
         if (allWords.length > 0) {
           const newWord = allWords.shift(); // Take first word
-          currentCells.push(newWord);
+          if (newWord) {  // Add type guard to ensure newWord is not undefined
+            currentCells.push(newWord);
 
-          // Update Redis with new cells and remaining words
-          await context.redis.set(`subwords_${postId}`, currentCells.join(','));
-          await context.redis.set(`subwords_${postId}_all_words`, allWords.join(','));
+            // Update Redis with new cells and remaining words
+            await context.redis.set(`subwords_${postId}`, currentCells.join(','));
+            await context.redis.set(`subwords_${postId}_all_words`, allWords.join(','));
+          }
 
           // Broadcast cell update with new word
           try {
