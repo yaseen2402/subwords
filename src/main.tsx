@@ -51,23 +51,40 @@ function sessionId(): string {
 Devvit.addSchedulerJob({
   name: 'VotedWordCheck',
   onRun: async (_, context) => {
+    console.log('VotedWordCheck job started');
+    
     const wordVotes: {[word: string]: number} = {};
     const cells = await context.redis.get(`subwords_${context.postId}`) || '';
     
+    console.log('Cells from Redis:', cells);
+    
     if (cells) {
       const words = cells.split(',');
+      console.log('Words to check:', words);
+      
       for (const word of words) {
         const voteKey = `subwords_${context.postId}_${word}_votes`;
         const votes = parseInt(await context.redis.get(voteKey) || '0');
+        
+        console.log(`Votes for ${word}: ${votes}`);
+        
         wordVotes[word] = votes;
       }
 
+      console.log('Word votes:', JSON.stringify(wordVotes));
+
       const mostVotedWord = Object.entries(wordVotes)
+        .filter(([_, votes]) => votes > 0)
         .sort((a, b) => b[1] - a[1])[0]?.[0];
+
+      console.log('Most voted word:', mostVotedWord);
 
       if (mostVotedWord) {
         const currentStory = await context.redis.get(`subwords_${context.postId}_story`) || '';
         const updatedStory = `${currentStory} ${mostVotedWord}`.trim();
+        
+        console.log('Current story:', currentStory);
+        console.log('Updated story:', updatedStory);
         
         await context.redis.set(`subwords_${context.postId}_story`, updatedStory);
         
@@ -80,7 +97,13 @@ Devvit.addSchedulerJob({
           type: 'storyUpdate',
           story: updatedStory
         });
+
+        console.log('Story update broadcasted');
+      } else {
+        console.log('No words with votes found');
       }
+    } else {
+      console.log('No cells found in Redis');
     }
   },
   cron: '*/30 * * * * *' // Run every 30 seconds
