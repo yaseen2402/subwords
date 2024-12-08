@@ -41,6 +41,16 @@ Devvit.configure({
   redis: true,
 });
 
+Devvit.addSettings([
+  {
+    name: 'gemini-api-key',
+    label: 'Gemini API Key',
+    type: 'string',
+    isSecret: true,
+    scope: 'app',
+  },
+]);
+
 function sessionId(): string {
   let id = '';
   const asciiZero = '0'.charCodeAt(0);
