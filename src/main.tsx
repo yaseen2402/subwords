@@ -1,6 +1,7 @@
 import './createPost.js';
 
 import { Devvit, useState, useChannel} from '@devvit/public-api';
+import { fetchRecentPostTitles, generateWordsFromTitles } from './fetchRecentPosts';
 
 type WordData = {
   word: string;
@@ -196,21 +197,54 @@ Devvit.addCustomPostType({
 
     // Initialize game state from Redis
     const [cells, setCells] = useState(async () => {
+      // First, check if words are already in Redis
       const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
-      if (!redisCells) return [];
-      console.log(redisCells);
+      if (redisCells) {
+        const cellsWithCounts: WordData[] = await Promise.all(
+          redisCells.split(',').map(async (word) => {
+            const key = `subwords_${context.postId}_${word}_users`;
+            const count = parseInt(await context.redis.get(key) || '0');
+            return { word, userCount: count };
+          })
+        );
+        return cellsWithCounts;
+      }
 
-      // Fetch user counts for each cell
-      const cellsWithCounts: WordData[] = await Promise.all(
-        redisCells.split(',').map(async (word) => {
-          const key = `subwords_${context.postId}_${word}_users`;
-          const count = parseInt(await context.redis.get(key) || '0');
-          console.log({word, userCount: count});
-          return { word, userCount: count };
-        })
-      );
+      // If no words, generate dynamically
+      try {
+        const titles = await fetchRecentPostTitles(context);
+        const generatedWords = await generateWordsFromTitles(titles);
+        
+        // Take first 10 words
+        const initialWords = generatedWords.slice(0, 10);
+        
+        // Store remaining words in Redis for future use
+        await context.redis.set(`subwords_${context.postId}_all_words`, generatedWords.slice(10).join(','));
 
-      return cellsWithCounts;
+        const cellsWithCounts: WordData[] = initialWords.map(word => ({
+          word,
+          userCount: 0
+        }));
+
+        // Store initial words in Redis
+        await context.redis.set(`subwords_${context.postId}`, initialWords.join(','));
+
+        return cellsWithCounts;
+      } catch (error) {
+        console.error('Word generation failed, using fallback', error);
+        return [
+          { word: 'APPLE', userCount: 0 },
+          { word: 'BERRY', userCount: 0 },
+          { word: 'CHESS', userCount: 0 },
+          { word: 'DAISY', userCount: 0 },
+          { word: 'EAGLE', userCount: 0 },
+          { word: 'GIANT', userCount: 0 },
+          { word: 'HONEY', userCount: 0 },
+          { word: 'IRONY', userCount: 0 },
+          { word: 'JOKER', userCount: 0 },
+          { word: 'KARMA', userCount: 0 }
+        ];
+      }
     });
 
     const [story, setStory] = useState(async () => {
@@ -286,40 +320,52 @@ Devvit.addCustomPostType({
               const updatedCount = count + 1;
               await context.redis.set(key, updatedCount.toString());
               
-              console.log("Saving new cell data in Redis:", { 
-                key, 
-                value: updatedCount, 
-                word 
-              });
-              
               return { word, userCount: updatedCount };
             })
           );
 
+          // Retrieve all generated words
+          const allWordsStr = await context.redis.get(`subwords_${context.postId}_all_words`) || '';
+          const allWords = allWordsStr ? allWordsStr.split(',') : [];
+
           // Update Redis with the newly selected cells
           const existingCellsStr = await context.redis.get(`subwords_${context.postId}`) || '';
           const existingCells = existingCellsStr ? existingCellsStr.split(',') : [];
-          const updatedCellWords = [...new Set([...existingCells, ...msg.data.newCells])];
           
+          // Replace used words with new words from the pool
+          const updatedCells = existingCells.map(existingWord => 
+            msg.data.newCells.includes(existingWord) && allWords.length > 0
+              ? allWords.shift()
+              : existingWord
+          );
+
+          // Update Redis with new cell configuration
           await context.redis.set(
             `subwords_${context.postId}`, 
-            updatedCellWords.join(',')
+            updatedCells.join(',')
+          );
+
+          // Store remaining words back in Redis
+          await context.redis.set(
+            `subwords_${context.postId}_all_words`, 
+            allWords.join(',')
           );
           
-          console.log('Sending message to channel:', {
-            session: mySession,
-            cells: newCellsWithCounts
-          });
-          
+          const updatedCellsWithCounts: WordData[] = await Promise.all(
+            updatedCells.map(async (word) => {
+              const key = `subwords_${context.postId}_${word}_users`;
+              const count = parseInt(await context.redis.get(key) || '0');
+              return { word, userCount: count };
+            })
+          );
+
           await channel.send({
             session: mySession,
-            cells: newCellsWithCounts
+            cells: updatedCellsWithCounts
           });
-
-          console.log('Sent new cells to channel:', newCellsWithCounts);
           
           // Update the state with the new cells
-          setCells([...newCellsWithCounts]);
+          setCells(updatedCellsWithCounts);
           break;
         case 'saveStory':
           const storyText = msg.data.story;

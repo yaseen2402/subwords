@@ -1,9 +1,6 @@
 class WordGuesserGame {
   constructor() {
-      this.words = [
-          "APPLE", "BERRY", "CHESS", "DAISY", "EAGLE",
-          "SUSAMONGUS", "GIANT", "HONEY", "IRONY", "JOKER",
-      ];
+      this.words = []; // Words will be dynamically loaded
       this.story = "";
       this.gridContainer = document.getElementById("grid");
       this.message = document.getElementById("message");
