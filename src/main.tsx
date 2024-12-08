@@ -74,16 +74,25 @@ Devvit.addSchedulerJob({
         const voteKey = `subwords_${context.postId}_${word}_votes`;
         const votes = parseInt(await context.redis.get(voteKey) || '0');
         
-        console.log(`Votes for ${word}: ${votes}`);
+        console.log(`Detailed vote check for ${word}:`, {
+          voteKey: voteKey,
+          votes: votes,
+          redisValue: await context.redis.get(voteKey)
+        });
         
         wordVotes[word] = votes;
       }
 
-      console.log('Word votes:', JSON.stringify(wordVotes));
+      console.log('Detailed Word votes:', JSON.stringify(wordVotes));
 
       const mostVotedWord = Object.entries(wordVotes)
         .filter(([_, votes]) => votes > 0)
         .sort((a, b) => b[1] - a[1])[0]?.[0];
+      
+      console.log('Most voted word selection process:', {
+        wordVotes: wordVotes,
+        mostVotedWord: mostVotedWord
+      });
 
       console.log('Most voted word:', mostVotedWord);
 
@@ -296,7 +305,15 @@ Devvit.addCustomPostType({
           const votedWord = msg.data.word;
           const voteKey = `subwords_${context.postId}_${votedWord}_votes`;
           const currentVotes = parseInt(await context.redis.get(voteKey) || '0');
-          await context.redis.set(voteKey, (currentVotes + 1).toString());
+          const newVoteCount = currentVotes + 1;
+          await context.redis.set(voteKey, newVoteCount.toString());
+          
+          console.log('Word voted:', {
+            word: votedWord,
+            voteKey: voteKey,
+            previousVotes: currentVotes,
+            newVotes: newVoteCount
+          });
           break;
         case 'initialData':
         case 'updateGameCells':
