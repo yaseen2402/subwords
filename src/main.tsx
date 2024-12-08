@@ -214,7 +214,7 @@ Devvit.addCustomPostType({
       // If no words, generate dynamically
       try {
         const titles = await fetchRecentPostTitles(context);
-        const generatedWords = await generateWordsFromTitles(titles);
+        const generatedWords = await generateWordsFromTitles(context, titles);
         
         // Take first 10 words
         const initialWords = generatedWords.slice(0, 10);

@@ -1,5 +1,4 @@
 import { Context } from '@devvit/public-api';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function fetchRecentPostTitles(context: Context) {
   try {
@@ -27,31 +26,40 @@ export async function fetchRecentPostTitles(context: Context) {
   }
 }
 
-export async function generateWordsFromTitles(titles: string[]): Promise<string[]> {
+export async function useGemini(context: Context, prompt: string) {
   try {
-    // Use environment variable for API key (you'll need to set this up in Devvit)
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+    // Replace with your actual Gemini API endpoint and key
+    const response = await context.http.fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': process.env.GEMINI_API_KEY || ''
+      },
+      body: JSON.stringify({
+        contents: [{ 
+          parts: [{ 
+            text: prompt 
+          }] 
+        }]
+      })
+    });
 
-    const prompt = `
-      From these Reddit post titles: ${titles.join(', ')}
-      Generate a list of 100 unique, interesting words that could form a meaningful story.
-      Include words from the titles and add creative, complementary words.
-      Provide the words as a comma-separated list, all in UPPERCASE.
-    `;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const data = await response.json();
+    const generatedText = data.candidates[0].content.parts[0].text;
 
     // Parse the response into an array of words
-    const words = text.split(',')
+    const words = generatedText.split(',')
       .map(word => word.trim().toUpperCase())
       .filter(word => word.length > 2 && word.length < 10);
 
     return words.slice(0, 100);
   } catch (error) {
-    console.error('Error generating words:', error);
+    console.error('Error using Gemini:', error);
+    
     // Fallback words if generation fails
     return [
       "APPLE", "BERRY", "CHESS", "DAISY", "EAGLE", 
@@ -59,4 +67,15 @@ export async function generateWordsFromTitles(titles: string[]): Promise<string[
       "LIGHT", "MAGIC", "NOBLE", "OCEAN", "PEACE"
     ];
   }
+}
+
+export async function generateWordsFromTitles(context: Context, titles: string[]): Promise<string[]> {
+  const prompt = `
+    From these Reddit post titles: ${titles.join(', ')}
+    Generate a list of 100 unique, interesting words that could form a meaningful story.
+    Include words from the titles and add creative, complementary words.
+    Provide the words as a comma-separated list, all in UPPERCASE.
+  `;
+
+  return await useGemini(context, prompt);
 }
