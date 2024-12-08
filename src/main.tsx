@@ -35,6 +35,7 @@ type WebViewMessage =
     };
     
 Devvit.configure({
+  http: true,
   redditAPI: true,
   realtime: true,
   redis: true,
