@@ -18,8 +18,6 @@ class WordGuesserGame {
   // Initialize game
   initGame() {
     this.storyElement = document.getElementById("story");
-    this.createGrid();
-    this.addEventListeners();
     
     // handling messages sent from devvit app 
     window.addEventListener('message', (event) => {
@@ -39,6 +37,14 @@ class WordGuesserGame {
                 console.log('Initial data:', {username, currentCells, story});
                 this.username = username;
                 this.currentCells = currentCells || []; 
+                
+                // Set words from currentCells before creating grid
+                this.words = this.currentCells.map(cell => cell.word);
+                
+                // Create grid after setting words
+                this.createGrid();
+                this.addEventListeners();
+                
                 this.updateGridFromGameState();
                 
                 // Update story
