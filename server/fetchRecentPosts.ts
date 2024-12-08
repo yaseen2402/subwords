@@ -53,8 +53,8 @@ export async function useGemini(context: TriggerContext, prompt: string) {
 
     // Parse the response into an array of words
     const words = generatedText.split(',')
-      .map(word => word.trim().toUpperCase())
-      .filter(word => word.length > 2 && word.length < 10);
+      .map((word: string) => word.trim().toUpperCase())
+      .filter((word: string) => word.length > 2 && word.length < 10);
 
     return words.slice(0, 100);
   } catch (error) {
