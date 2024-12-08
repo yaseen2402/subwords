@@ -111,24 +111,6 @@ button:hover {
   min-height: 50px;
 }
 
-#storyInput {
-  width: 100%;
-  min-height: 100px;
-  margin: 10px 0;
-  padding: 10px;
-  border: 2px solid #4caf50;
-  border-radius: 8px;
-  resize: vertical;
-  font-size: 16px;
-}
-
-/* #message {
-  font-weight: bold;
-  margin-top: 15px;
-  padding: 10px;
-  border-radius: 8px;
-  animation: fadeIn 0.5s;
-} */
 
 @keyframes fadeIn {
   from { opacity: 0; }

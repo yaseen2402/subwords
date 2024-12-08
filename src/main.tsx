@@ -237,6 +237,7 @@ Devvit.addCustomPostType({
     });
     
     channel2.subscribe();
+    
     const channel = useChannel({
       name: 'game_updates',
       onMessage: (message: any) => {

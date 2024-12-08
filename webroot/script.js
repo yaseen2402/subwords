@@ -55,7 +55,7 @@ class WordGuesserGame {
                 this.updateGridFromGameState();
             }
 
-            if(message.type === 'updateStory'){
+            if(message.type === 'updateTextField'){
               console.log("Received story update message", message.data);
               this.updateTextField(message.data);
             }
@@ -241,14 +241,7 @@ class WordGuesserGame {
       }
     });
 
-    // Story input event listener
-    document.getElementById("storyInput").addEventListener("change", (event) => {
-      const storyText = event.target.value;
-      window.parent?.postMessage({
-        type: 'saveStory',
-        data: { story: storyText }
-      }, '*');
-    });
+
   }
 
   arraysMatch(arr1, arr2) {
