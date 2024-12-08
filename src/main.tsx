@@ -53,16 +53,21 @@ Devvit.addSchedulerJob({
   onRun: async (event, context) => {
     console.log('VotedWordCheck job started', {
       postId: event.data?.postId || 'No postId',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      fullEventData: JSON.stringify(event)
     });
     
     if (!event.data?.postId) {
-      console.error('No postId provided to CheckMostVotedWord job');
+      console.error('No postId provided to CheckMostVotedWord job', {
+        eventData: JSON.stringify(event),
+        contextData: JSON.stringify(context)
+      });
       return;
     }
 
+    const postId = event.data.postId;
     const wordVotes: {[word: string]: number} = {};
-    const cells = await context.redis.get(`subwords_${event.data.postId}`) || '';
+    const cells = await context.redis.get(`subwords_${postId}`) || '';
     
     console.log('Cells from Redis:', cells, 'for postId:', event.data.postId);
     
@@ -130,7 +135,9 @@ Devvit.addTrigger({
   event: 'PostCreate',
   onEvent: async (event, context) => {
     if (!event.post || !event.post.id) {
-      console.error('Post data is missing from the event');
+      console.error('Post data is missing from the event', {
+        fullEventData: JSON.stringify(event)
+      });
       return;
     }
     
@@ -140,16 +147,24 @@ Devvit.addTrigger({
         name: 'CheckMostVotedWord',
         data: { 
           postId: event.post.id,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          triggerContext: {
+            subredditId: event.post.subredditId,
+            subredditName: event.post.subredditName
+          }
         },
       });
       console.log('Scheduled CheckMostVotedWord job', {
         jobId,
-        postId: event.post.id
+        postId: event.post.id,
+        subredditId: event.post.subredditId
       });
       await context.redis.set(`jobId_${event.post.id}`, jobId);
     } catch (e) {
-      console.error('Error scheduling job:', e);
+      console.error('Error scheduling job:', {
+        error: e,
+        eventData: JSON.stringify(event)
+      });
       throw e;
     }
   },
