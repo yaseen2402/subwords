@@ -150,7 +150,6 @@ Devvit.addTrigger({
           createdAt: new Date().toISOString(),
           triggerContext: {
             subredditId: event.post.subredditId,
-            subredditName: event.post.subredditName
           }
         },
       });
