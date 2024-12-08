@@ -29,11 +29,17 @@ export async function fetchRecentPostTitles(context: Context) {
 export async function useGemini(context: TriggerContext, prompt: string) {
   try {
     // Replace with your actual Gemini API endpoint and key
+    const apiKey = await context.settings.get('gemini-api-key');
+
+    if (typeof apiKey !== 'string') {
+        throw new Error('Gemini API key is not set or is invalid');
+      }
+      
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GEMINI_API_KEY || ''
+        'x-goog-api-key': apiKey || ''
       },
       body: JSON.stringify({
         contents: [{ 
