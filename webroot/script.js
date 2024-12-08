@@ -83,6 +83,11 @@ class WordGuesserGame {
                                    (event.data.word ? `${this.storyElement.innerText} ${event.data.word}` : '');
             this.storyElement.innerText = storyToDisplay.trim();
             break;
+          case 'gameOver':
+            console.log('Game over received:', event.data);
+            this.currentCells = [{ word: 'GAME OVER', userCount: 0 }];
+            this.updateGridFromGameState();
+            break;
         }
       }
     };
@@ -127,6 +132,12 @@ class WordGuesserGame {
       typeof cell === 'string' ? cell : cell.word
     );
     
+    // Check for game over
+    if (this.words.length === 1 && this.words[0] === 'GAME OVER') {
+      this.showGameOverScreen();
+      return;
+    }
+    
     this.createGrid();
     
     document.querySelectorAll(".cell").forEach(cell => {
@@ -160,6 +171,43 @@ class WordGuesserGame {
                 playerCountEl.textContent = userCount > 0 ? `+${userCount}` : '';
             }
         }
+    });
+  }
+
+  showGameOverScreen() {
+    // Create a game over overlay
+    const gameOverOverlay = document.createElement('div');
+    gameOverOverlay.id = 'game-over-overlay';
+    gameOverOverlay.innerHTML = `
+      <div class="game-over-content">
+        <h1>Game Over</h1>
+        <p>You've used all available words!</p>
+        <p>Final Story: ${this.storyElement.innerText}</p>
+        <button id="restart-game">Play Again</button>
+      </div>
+    `;
+    
+    // Style the overlay
+    gameOverOverlay.style.position = 'fixed';
+    gameOverOverlay.style.top = '0';
+    gameOverOverlay.style.left = '0';
+    gameOverOverlay.style.width = '100%';
+    gameOverOverlay.style.height = '100%';
+    gameOverOverlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    gameOverOverlay.style.display = 'flex';
+    gameOverOverlay.style.justifyContent = 'center';
+    gameOverOverlay.style.alignItems = 'center';
+    gameOverOverlay.style.zIndex = '1000';
+    
+    // Add to body
+    document.body.appendChild(gameOverOverlay);
+    
+    // Add restart game listener
+    document.getElementById('restart-game').addEventListener('click', () => {
+      // Notify parent to restart the game
+      window.parent?.postMessage({
+        type: 'restartGame'
+      }, '*');
     });
   }
 

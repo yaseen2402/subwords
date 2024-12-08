@@ -133,6 +133,23 @@ Devvit.addSchedulerJob({
         const allWordsStr = await context.redis.get(`subwords_${postId}_all_words`) || '';
         const allWords = allWordsStr.split(',');
 
+        // Check if game is over
+        const gameStatus = await context.redis.get(`subwords_${postId}_game_status`);
+        if (gameStatus === 'GAME_OVER') {
+          console.log('Game is over, no more words to add');
+          
+          // Broadcast game over status
+          try {
+            await context.realtime.send('game_updates', {
+              type: 'gameOver',
+              story: updatedStory
+            });
+          } catch (error) {
+            console.error('Failed to broadcast game over', error);
+          }
+          return;
+        }
+
         // Add a new word if available
         if (allWords.length > 0) {
           const newWord = allWords.shift(); // Take first word
@@ -155,6 +172,19 @@ Devvit.addSchedulerJob({
             });
           } catch (error) {
             console.error('Failed to broadcast cell update', error);
+          }
+        } else {
+          // No more words available
+          await context.redis.set(`subwords_${postId}_game_status`, 'GAME_OVER');
+          
+          // Broadcast game over status
+          try {
+            await context.realtime.send('game_updates', {
+              type: 'gameOver',
+              story: updatedStory
+            });
+          } catch (error) {
+            console.error('Failed to broadcast game over', error);
           }
         }
 
@@ -306,21 +336,20 @@ Devvit.addCustomPostType({
         // Store initial words in Redis
         await context.redis.set(`subwords_${context.postId}`, initialWords.join(','));
 
+        // Check if we have enough words
+        if (cellsWithCounts.length === 0) {
+          // Game over scenario: no more words available
+          await context.redis.set(`subwords_${context.postId}_game_status`, 'GAME_OVER');
+          return [{ word: 'GAME OVER', userCount: 0 }];
+        }
+
         return cellsWithCounts;
       } catch (error) {
         console.error('Word generation failed, using fallback', error);
-        return [
-          { word: 'APPLE', userCount: 0 },
-          { word: 'BERRY', userCount: 0 },
-          { word: 'CHESS', userCount: 0 },
-          { word: 'DAISY', userCount: 0 },
-          { word: 'EAGLE', userCount: 0 },
-          { word: 'GIANT', userCount: 0 },
-          { word: 'HONEY', userCount: 0 },
-          { word: 'IRONY', userCount: 0 },
-          { word: 'JOKER', userCount: 0 },
-          { word: 'KARMA', userCount: 0 }
-        ];
+        
+        // Game over scenario: no words available
+        await context.redis.set(`subwords_${context.postId}_game_status`, 'GAME_OVER');
+        return [{ word: 'GAME OVER', userCount: 0 }];
       }
     });
 
@@ -386,6 +415,41 @@ Devvit.addCustomPostType({
     //receiving messages from webview
     const onMessage = async (msg: any) => {
       switch (msg.type) {
+        case 'restartGame':
+          // Reset game state
+          await context.redis.del(`subwords_${context.postId}`);
+          await context.redis.del(`subwords_${context.postId}_all_words`);
+          await context.redis.del(`subwords_${context.postId}_story`);
+          await context.redis.del(`subwords_${context.postId}_game_status`);
+
+          // Regenerate words
+          const titles = await fetchRecentPostTitles(context);
+          const generatedWords = await generateWordsFromTitles(context, titles);
+          
+          const initialWords = generatedWords.slice(0, 10);
+          await context.redis.set(`subwords_${context.postId}_all_words`, generatedWords.slice(10).join(','));
+
+          const cellsWithCounts: WordData[] = initialWords
+            .filter((word: string | undefined): word is string => 
+              word !== undefined && word.trim() !== ''
+            )
+            .map(word => ({
+              word,
+              userCount: 0
+            }));
+
+          await context.redis.set(`subwords_${context.postId}`, initialWords.join(','));
+
+          // Notify webview with new game state
+          context.ui.webView.postMessage('myWebView', {
+            type: 'initialData',
+            data: {
+              username: username,
+              currentCells: cellsWithCounts,
+              story: '',
+            }
+          });
+          break;
         case 'saveCells':
           // Process only the newly selected cells
           const newCellsWithCounts: WordData[] = await Promise.all(
