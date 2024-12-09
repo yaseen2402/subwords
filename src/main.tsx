@@ -227,6 +227,12 @@ Devvit.addSchedulerJob({
 Devvit.addTrigger({
   event: 'PostCreate',
   onEvent: async (event, context) => {
+    console.log('PostCreate trigger fired', {
+      postId: event.post?.id,
+      subredditId: event.post?.subredditId,
+      fullEventData: JSON.stringify(event)
+    });
+
     if (!event.post || !event.post.id) {
       console.error('Post data is missing from the event', {
         fullEventData: JSON.stringify(event)
@@ -235,6 +241,7 @@ Devvit.addTrigger({
     }
     
     try {
+      console.log('Attempting to schedule job for post', event.post.id);
 
       let activeJobs = JSON.parse(await context.redis.get(JOB_LIST_KEY) || '[]');
       
@@ -259,9 +266,15 @@ Devvit.addTrigger({
         },
       });
 
+      console.log('Job scheduled successfully', { 
+        jobId, 
+        postId: event.post.id, 
+        subredditName: event.post.subredditId 
+      });
+
       activeJobs.push({ jobId, postId: event.post.id });
       await context.redis.set(JOB_LIST_KEY, JSON.stringify(activeJobs));
-      console.log('Scheduled new job', { jobId, postId: event.post.id });
+      console.log('Updated active jobs list', { activeJobsCount: activeJobs.length });
 
       console.log('Scheduled CheckMostVotedWord job', {
         jobId,
@@ -272,6 +285,7 @@ Devvit.addTrigger({
     } catch (e) {
       console.error('Error scheduling job:', {
         error: e,
+        errorMessage: e instanceof Error ? e.message : 'Unknown error',
         eventData: JSON.stringify(event)
       });
       throw e;
