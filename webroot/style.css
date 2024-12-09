@@ -59,11 +59,6 @@ body {
   background-color: #006400;
 }
 
-.cell.correct {
-  background-color: #81c784;
-  color: white;
-  border-color: #4caf50;
-}
 
 @keyframes pulse {
   0% { transform: scale(1); }
@@ -90,15 +85,6 @@ button:hover {
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-#hint {
-  font-weight: bold;
-  color: #2196f3;
-  font-size: 16px;
-  padding: 5px;
-  background: #e3f2fd;
-  border-radius: 8px;
-  margin: 5px;
-}
 
 #story {
   font-weight: bold;
