@@ -3,6 +3,9 @@ import './createPost.js';
 import { Devvit, useState, useChannel} from '@devvit/public-api';
 import { fetchRecentPostTitles, generateWordsFromTitles } from '../server/fetchRecentPosts.js';
 
+const MAX_JOBS = 10;
+const JOB_LIST_KEY = 'active_job_list';
+
 type WordData = {
   word: string;
   userCount: number;
@@ -232,6 +235,18 @@ Devvit.addTrigger({
     }
     
     try {
+
+      let activeJobs = JSON.parse(await context.redis.get(JOB_LIST_KEY) || '[]');
+      
+      // If we're at the limit, remove the oldest job
+      if (activeJobs.length >= MAX_JOBS) {
+        const oldestJob = activeJobs.shift();
+        if (oldestJob) {
+          await context.scheduler.cancelJob(oldestJob.jobId);
+          console.log('Cancelled old job', { jobId: oldestJob.jobId, postId: oldestJob.postId });
+        }
+      }
+
       const jobId = await context.scheduler.runJob({
         cron: '*/30 * * * * *',
         name: 'CheckMostVotedWord',
@@ -243,6 +258,11 @@ Devvit.addTrigger({
           }
         },
       });
+
+      activeJobs.push({ jobId, postId: event.post.id });
+      await context.redis.set(JOB_LIST_KEY, JSON.stringify(activeJobs));
+      console.log('Scheduled new job', { jobId, postId: event.post.id });
+
       console.log('Scheduled CheckMostVotedWord job', {
         jobId,
         postId: event.post.id,
