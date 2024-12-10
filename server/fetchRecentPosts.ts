@@ -1,6 +1,6 @@
 import { Context, TriggerContext } from '@devvit/public-api';
 
-export async function fetchRecentPostTitles(context: Context) {
+export async function fetchRecentPostTitles(context: Context | TriggerContext) {
   try {
     // Get the current subreddit
     const subreddit = await context.reddit.getCurrentSubreddit();
@@ -82,7 +82,7 @@ export async function useGemini(context: TriggerContext, prompt: string) {
   }
 }
 
-export async function generateWordsFromTitles(context: Context, titles: string[]): Promise<string[]> {
+export async function generateWordsFromTitles(context: Context | TriggerContext, titles: string[]): Promise<string[]> {
   const prompt = `
     From these Reddit post titles: ${titles.join(', ')}
     Generate 10 unique, interconnected words that could form a coherent, engaging short story.
