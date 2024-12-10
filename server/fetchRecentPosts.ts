@@ -57,7 +57,7 @@ export async function useGemini(context: TriggerContext, prompt: string) {
       })
     });
 
-    console.log('Response Status:', response.status, response.status);
+    console.log('Response Status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
