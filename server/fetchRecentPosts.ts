@@ -57,7 +57,7 @@ export async function useGemini(context: TriggerContext, prompt: string) {
       })
     });
 
-    console.log('Response Status:', response.status, response.statusText);
+    console.log('Response Status:', response.status, response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -75,8 +75,8 @@ export async function useGemini(context: TriggerContext, prompt: string) {
 
     const words = generatedText
       .split(/[,\s]+/)  // Split on comma or whitespace
-      .map(word => word.trim().toUpperCase())
-      .filter(word => word.length >= 2 && word.length <= 10);
+      // .map(word => word.trim().toUpperCase())
+      // .filter(word => word.length >= 2 && word.length <= 10);
 
     console.log('Generated Words from Gemini:', words);
     console.log('Total Generated Words:', words.length);
