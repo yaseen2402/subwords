@@ -75,8 +75,8 @@ export async function useGemini(context: TriggerContext, prompt: string) {
 
     const words = generatedText
       .split(/[,\s]+/)  // Split on comma or whitespace
-      .map(word => word.trim().toUpperCase())
-      .filter(word => 
+      .map((word: string) => word.trim().toUpperCase())
+      .filter((word: string) => 
         word.length >= 2 && 
         word.length <= 10 && 
         !/^\d+$/.test(word) &&  // Exclude pure numbers
