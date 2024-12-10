@@ -1,7 +1,11 @@
 import './createPost.js';
 
 import { Devvit, useState, useChannel} from '@devvit/public-api';
-import { fetchRecentPostTitles, generateWordsFromTitles } from '../server/fetchRecentPosts.js';
+import { 
+  fetchRecentPostTitles, 
+  generateWordsFromTitles, 
+  generateFollowUpWords 
+} from '../server/fetchRecentPosts.js';
 
 const MAX_JOBS = 10;
 const JOB_LIST_KEY = 'active_job_list';
@@ -132,16 +136,11 @@ Devvit.addSchedulerJob({
         const currentCellsStr = await context.redis.get(`subwords_${postId}`) || '';
         const currentCells = currentCellsStr.split(',').filter(word => word !== mostVotedWord);
 
-        // Get remaining words from all words
-        const allWordsStr = await context.redis.get(`subwords_${postId}_all_words`) || '';
-        const allWords = allWordsStr.split(',');
-
-        // Check if game is over
-        const gameStatus = await context.redis.get(`subwords_${postId}_game_status`);
-        if (gameStatus === 'GAME_OVER') {
-          console.log('Game is over, no more words to add');
+        // Check story length and game status
+        const st = updatedStory.split(' ');
+        if (st.length >= MAX_STORY_WORDS) {
+          await context.redis.set(`subwords_${postId}_game_status`, 'GAME_OVER');
           
-          // Broadcast game over status
           try {
             await context.realtime.send('game_updates', {
               type: 'gameOver',
@@ -153,42 +152,38 @@ Devvit.addSchedulerJob({
           return;
         }
 
-        // Add a new word if available
-        if (allWords.length > 0) {
-          const newWord = allWords.shift(); // Take first word
-          if (newWord) {  // Add type guard to ensure newWord is not undefined
-            currentCells.push(newWord);
+        // Generate follow-up words using Gemini
+        const followUpWords = await generateFollowUpWords(context, mostVotedWord);
+        
+        // Get total words from Redis
+        const totalWordsStr = await context.redis.get(`subwords_${postId}_total_words`) || '';
+        const totalWords = totalWordsStr.split(',');
 
-            // Update Redis with new cells and remaining words
-            await context.redis.set(`subwords_${postId}`, currentCells.join(','));
-            await context.redis.set(`subwords_${postId}_all_words`, allWords.join(','));
-          }
+        // Filter out words already used in the story
+        const usedWords = updatedStory.split(' ');
+        const availableFollowUpWords = followUpWords.filter(word => 
+          !usedWords.includes(word) && !currentCells.includes(word)
+        );
 
-          // Broadcast cell update with new word
-          try {
-            await context.realtime.send('game_updates', {
-              type: 'updateCells',
-              cells: currentCells.map(word => ({
-                word,
-                userCount: 0  // Reset user count for new word
-              }))
-            });
-          } catch (error) {
-            console.error('Failed to broadcast cell update', error);
-          }
-        } else {
-          // No more words available
-          await context.redis.set(`subwords_${postId}_game_status`, 'GAME_OVER');
-          
-          // Broadcast game over status
-          try {
-            await context.realtime.send('game_updates', {
-              type: 'gameOver',
-              story: updatedStory
-            });
-          } catch (error) {
-            console.error('Failed to broadcast game over', error);
-          }
+        // Add follow-up words to current cells
+        const newCells = availableFollowUpWords.slice(0, 10).map(word => ({
+          word,
+          userCount: 0
+        }));
+
+        // Update Redis with new cells
+        await context.redis.set(`subwords_${postId}`, 
+          newCells.map(cell => cell.word).join(',')
+        );
+
+        // Broadcast cell update with new words
+        try {
+          await context.realtime.send('game_updates', {
+            type: 'updateCells',
+            cells: newCells
+          });
+        } catch (error) {
+          console.error('Failed to broadcast cell update', error);
         }
 
         // Broadcast story update with more context
@@ -357,6 +352,7 @@ Devvit.addCustomPostType({
         
         // Store remaining words in Redis for future use
         await context.redis.set(`subwords_${context.postId}_all_words`, generatedWords.slice(10).join(','));
+        await context.redis.set(`subwords_${context.postId}_total_words`, generatedWords.join(','));
 
         const cellsWithCounts: WordData[] = initialWords
           .filter((word: string | undefined): word is string => 
