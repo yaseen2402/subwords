@@ -9,7 +9,7 @@ import {
 
 const MAX_JOBS = 10;
 const JOB_LIST_KEY = 'active_job_list';
-const MAX_STORY_WORDS = 30;  // Maximum number of words in the story before game ends
+const MAX_STORY_WORDS = 8;  // Maximum number of words in the story before game ends
 
 type WordData = {
   word: string;
@@ -99,25 +99,25 @@ Devvit.addSchedulerJob({
         const voteKey = `subwords_${postId}_${word}_votes`;
         const votes = parseInt(await context.redis.get(voteKey) || '0');
         
-        console.log(`Detailed vote check for ${word}:`, {
-          voteKey: voteKey,
-          votes: votes,
-          redisValue: await context.redis.get(voteKey)
-        });
+        // console.log(`Detailed vote check for ${word}:`, {
+        //   voteKey: voteKey,
+        //   votes: votes,
+        //   redisValue: await context.redis.get(voteKey)
+        // });
         
         wordVotes[word] = votes;
       }
 
-      console.log('Detailed Word votes:', JSON.stringify(wordVotes));
+      // console.log('Detailed Word votes:', JSON.stringify(wordVotes));
 
       const mostVotedWord = Object.entries(wordVotes)
         .filter(([_, votes]) => votes > 0)
         .sort((a, b) => b[1] - a[1])[0]?.[0];
       
-      console.log('Most voted word selection process:', {
-        wordVotes: wordVotes,
-        mostVotedWord: mostVotedWord
-      });
+      // console.log('Most voted word selection process:', {
+      //   wordVotes: wordVotes,
+      //   mostVotedWord: mostVotedWord
+      // });
 
       console.log('Most voted word:', mostVotedWord);
 
@@ -237,6 +237,18 @@ Devvit.addTrigger({
     }
     
     try {
+
+      let activeJobs = JSON.parse(await context.redis.get(JOB_LIST_KEY) || '[]');
+      
+      // If we're at the limit, remove the oldest job
+      if (activeJobs.length >= MAX_JOBS) {
+        const oldestJob = activeJobs.shift();
+        if (oldestJob) {
+          await context.scheduler.cancelJob(oldestJob.jobId);
+          console.log('Cancelled old job', { jobId: oldestJob.jobId, postId: oldestJob.postId });
+        }
+      }
+      
       // Fetch recent post titles from the same subreddit
       const titles = await fetchRecentPostTitles(context);
       console.log('📜 Fetched Titles:', { 
@@ -273,6 +285,10 @@ Devvit.addTrigger({
           }
         },
       });
+
+      activeJobs.push({ jobId, postId: event.post.id });
+      await context.redis.set(JOB_LIST_KEY, JSON.stringify(activeJobs));
+      console.log('Scheduled new job', { jobId, postId: event.post.id });
 
       console.log('✅ Game Initialization Complete', { 
         postId: event.post.id,

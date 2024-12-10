@@ -1,4 +1,4 @@
-import { Context, TriggerContext } from '@devvit/public-api';
+import { Context, Subreddit, TriggerContext } from '@devvit/public-api';
 
 export async function fetchRecentPostTitles(context: Context | TriggerContext) {
   try {
@@ -7,7 +7,8 @@ export async function fetchRecentPostTitles(context: Context | TriggerContext) {
     
     // Get new posts from the subreddit using context.reddit
     const posts = await context.reddit.getNewPosts({
-      subredditName: subreddit.name,
+      subredditName: 'australia',
+      // subredditName: subreddit.name,
       limit: 50
     }).all();
     
@@ -38,7 +39,7 @@ export async function useGemini(context: TriggerContext, prompt: string) {
     console.log('API Key Status:', apiKey ? 'Key Present' : 'Key Missing');
     console.log('Full Prompt:', prompt);
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ export async function useGemini(context: TriggerContext, prompt: string) {
           }] 
         }],
         generationConfig: {
-          temperature: 0.7,
+          temperature: 1,
           maxOutputTokens: 200
         }
       })
@@ -115,18 +116,18 @@ export async function useGemini(context: TriggerContext, prompt: string) {
 export async function generateWordsFromTitles(context: Context | TriggerContext, titles: string[]): Promise<string[]> {
   const prompt = `
     From these Reddit post titles: ${titles.join(', ')}
-    Generate 10 unique, meaningful words for a story.
+    Select 10 words focusing on .
+    - **Proper Nouns:** (e.g., names, places)
+    - **Terms related to fantasy, science fiction, or action.** 
+    - **Unique or evocative words.**
+
     STRICT RULES:
     - NO numbers
     - NO punctuation
     - NO list markers
     - Words must be UPPERCASE
-    - Words between 4-10 characters
-    - Include diverse parts of speech: verbs, nouns, adjectives, adverbs
-    - Ensure words can contribute to an engaging narrative
-    
-    Example Good Output: CREATING BUILDING IMAGINE INSIDE THROUGH SEVERAL NUMEROUS EXPLORING SUDDENLY FINALLY
-  `;
+    - There should be atleats 1 article and 1 pronoun in those words.
+      `;
 
   console.log('Generating words from titles:', {
     titleCount: titles.length,
@@ -165,7 +166,16 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
 
 export async function generateFollowUpWords(context: TriggerContext | Context, currentStory: string): Promise<string[]> {
   const prompt = `
-    Given the current story context: "${currentStory}",, provide a list of 10 words (including prepositions, articles, verbs, nouns, adjectives, etc.) that can be used to complete the phrase "${currentStory}" to form a grammatically correct and meaningful sentence. The words should help to develop the story and could include elements like destination, action, or character motivation
+    Given the current story context: "${currentStory}",
+     provide a list of 10 words (including prepositions, articles, verbs, nouns, adjectives, etc.) that can be used to continue the phrase "${currentStory}"  
+     STRICT RULES:
+    - NO numbers
+    - NO punctuation
+    - NO list markers
+    - Words must be UPPERCASE
+    - Ensure words can contribute to an engaging narrative
+    - If applicable, consider words related to characters, settings, or plot elements from the story context.
+    - There should be atleast one article and one preposition in the words you return 
   `;
 
   const followUpWords = await useGemini(context, prompt);
