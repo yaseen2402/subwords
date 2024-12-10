@@ -75,8 +75,14 @@ export async function useGemini(context: TriggerContext, prompt: string) {
 
     const words = generatedText
       .split(/[,\s]+/)  // Split on comma or whitespace
-      // .map(word => word.trim().toUpperCase())
-      // .filter(word => word.length >= 2 && word.length <= 10);
+      .map(word => word.trim().toUpperCase())
+      .filter(word => 
+        word.length >= 2 && 
+        word.length <= 10 && 
+        !/^\d+$/.test(word) &&  // Exclude pure numbers
+        !/^[.,:()]/.test(word)  // Exclude punctuation
+      )
+      .slice(0, 10);  // Limit to 10 words
 
     console.log('Generated Words from Gemini:', words);
     console.log('Total Generated Words:', words.length);
