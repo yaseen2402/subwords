@@ -101,13 +101,13 @@ export async function generateWordsFromTitles(context: Context, titles: string[]
 
   // Additional filtering and validation
   const processedWords = generatedWords
-    .map(word => word.trim().toUpperCase())
-    .filter(word => 
-      word.length >= 4 && 
-      word.length <= 10 && 
-      /^[A-Z]+$/.test(word)
-    )
-    .slice(0, 10);
+    // .map(word => word.trim().toUpperCase())
+    // .filter(word => 
+    //   word.length >= 4 && 
+    //   word.length <= 10 && 
+    //   /^[A-Z]+$/.test(word)
+    // )
+    // .slice(0, 10);
 
   console.log('Processed words:', {
     originalCount: generatedWords.length,
