@@ -9,6 +9,7 @@ import {
 
 const MAX_JOBS = 10;
 const JOB_LIST_KEY = 'active_job_list';
+const MAX_STORY_WORDS = 30;  // Maximum number of words in the story before game ends
 
 type WordData = {
   word: string;
