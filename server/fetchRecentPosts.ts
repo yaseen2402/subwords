@@ -127,25 +127,35 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
   return processedWords;
 }
 
-export async function generateFollowUpWords(context: TriggerContext | Context, previousWord: string): Promise<string[]> {
+export async function generateFollowUpWords(context: TriggerContext | Context, currentStory: string): Promise<string[]> {
   const prompt = `
-    Given the word "${previousWord}", generate 10 unique, interesting follow-up words 
-    that could form a cohesive sentence or continue an engaging story. 
-    Ensure the words are creative, varied in length, and can be used to build narrative tension.
+    Given the current story context: "${currentStory}", 
+    generate 10 unique, interesting follow-up words 
+    that could form a cohesive continuation of the narrative. 
+    Consider the existing story's tone, themes, and progression.
+    Ensure the words are creative, varied in length, and can build narrative depth.
     Provide the words as a comma-separated list, all in UPPERCASE.
-    Avoid repeating the previous word.
+    Avoid repeating words already in the story.
+    Focus on words that advance the story's plot or reveal character motivations.
   `;
 
   const followUpWords = await useGemini(context, prompt);
   
+  // Filter out words already in the story
+  const usedWords = currentStory.toUpperCase().split(' ');
+  const uniqueFollowUpWords = followUpWords.filter(word => 
+    !usedWords.includes(word)
+  );
+  
   // Ensure we have at least 10 words, use fallback if needed
-  if (followUpWords.length < 10) {
+  if (uniqueFollowUpWords.length < 10) {
     const fallbackWords = [
       "ADVENTURE", "MYSTERY", "COURAGE", "DREAM", "JOURNEY", 
       "HOPE", "CHALLENGE", "DISCOVERY", "WISDOM", "DESTINY"
-    ];
-    return [...followUpWords, ...fallbackWords].slice(0, 10);
+    ].filter(word => !usedWords.includes(word));
+    
+    return [...uniqueFollowUpWords, ...fallbackWords].slice(0, 10);
   }
 
-  return followUpWords.slice(0, 10);
+  return uniqueFollowUpWords.slice(0, 10);
 }
