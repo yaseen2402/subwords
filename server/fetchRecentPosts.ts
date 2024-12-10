@@ -35,7 +35,7 @@ export async function useGemini(context: TriggerContext, prompt: string) {
         throw new Error('Gemini API key is not set or is invalid');
       }
       
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -59,8 +59,8 @@ export async function useGemini(context: TriggerContext, prompt: string) {
 
     // Parse the response into an array of words
     const words = generatedText.split(',')
-      .map((word: string) => word.trim().toUpperCase())
-      .filter((word: string) => word.length > 2 && word.length < 10);
+      // .map((word: string) => word.trim().toUpperCase())
+      // .filter((word: string) => word.length > 2 && word.length < 10);
 
     console.log('Generated Words from Gemini:', words);
     console.log('Total Generated Words:', words.length);
@@ -72,9 +72,9 @@ export async function useGemini(context: TriggerContext, prompt: string) {
     
     // Fallback words if generation fails
     const fallbackWords = [
-      "APPLE", "BERRY", "CHESS", "DAISY", "EAGLE", 
-      "GIANT", "HONEY", "IRONY", "JOKER", "KARMA",
-      "LIGHT", "MAGIC", "NOBLE", "OCEAN", "PEACE"
+      "THE", "CEO", "CHESS", "BAD", "AN", 
+      "TO", "HONEY", "SHOT", "OF", "KARMA",
+      "A", "NOT", "NOBLE", "GOOD", "PEACE"
     ];
 
     console.log('Using Fallback Words:', fallbackWords);
@@ -85,10 +85,8 @@ export async function useGemini(context: TriggerContext, prompt: string) {
 export async function generateWordsFromTitles(context: Context | TriggerContext, titles: string[]): Promise<string[]> {
   const prompt = `
     From these Reddit post titles: ${titles.join(', ')}
-    Generate 10 unique, interconnected words that could form a coherent, engaging short story.
-    Words should be diverse, evocative, and capable of creating narrative progression.
-    Prioritize words that suggest action, emotion, or transformation.
-    Provide words as a comma-separated list, all in UPPERCASE.
+    Generate 10 unique words that could start a story.
+    The words can be Article, Noun, adjective, adverb, preposition or anything else but make sure it forms adding that word forms a coherent sentence. 
     Ensure no repetition and aim for words between 4-10 characters.
   `;
 
@@ -129,14 +127,7 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
 
 export async function generateFollowUpWords(context: TriggerContext | Context, currentStory: string): Promise<string[]> {
   const prompt = `
-    Given the current story context: "${currentStory}", 
-    generate 10 unique, interesting follow-up words 
-    that could form a cohesive continuation of the narrative. 
-    Consider the existing story's tone, themes, and progression.
-    Ensure the words are creative, varied in length, and can build narrative depth.
-    Provide the words as a comma-separated list, all in UPPERCASE.
-    Avoid repeating words already in the story.
-    Focus on words that advance the story's plot or reveal character motivations.
+    Given the current story context: "${currentStory}",, provide a list of 10 words (including prepositions, articles, verbs, nouns, adjectives, etc.) that can be used to complete the phrase "${currentStory}" to form a grammatically correct and meaningful sentence. The words should help to develop the story and could include elements like destination, action, or character motivation
   `;
 
   const followUpWords = await useGemini(context, prompt);
