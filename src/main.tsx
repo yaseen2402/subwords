@@ -154,8 +154,8 @@ Devvit.addSchedulerJob({
         }
 
         // Generate ALL new words based on the current story
-        const currentStory = await context.redis.get(`subwords_${postId}_story`) || '';
-        const newFollowUpWords = await generateFollowUpWords(context, currentStory);
+        const storyContext = await context.redis.get(`subwords_${postId}_story`) || '';
+        const newFollowUpWords = await generateFollowUpWords(context, storyContext);
         
         // Filter out words already used in the story
         const usedWords = updatedStory.split(' ');
