@@ -152,29 +152,31 @@ Devvit.addSchedulerJob({
           return;
         }
 
-        // Generate follow-up words using Gemini
-        const followUpWords = await generateFollowUpWords(context, mostVotedWord);
+        // Generate ALL new words based on the last added word
+        const newFollowUpWords = await generateFollowUpWords(context, mostVotedWord);
         
-        // Get total words from Redis
-        const totalWordsStr = await context.redis.get(`subwords_${postId}_total_words`) || '';
-        const totalWords = totalWordsStr.split(',');
-
         // Filter out words already used in the story
         const usedWords = updatedStory.split(' ');
-        const availableFollowUpWords = followUpWords.filter(word => 
-          !usedWords.includes(word) && !currentCells.includes(word)
+        const availableNewWords = newFollowUpWords.filter(word => 
+          !usedWords.includes(word)
         );
 
-        // Add follow-up words to current cells
-        const newCells = availableFollowUpWords.slice(0, 10).map(word => ({
+        // Create new cells, replacing ALL existing cells
+        const newCells = availableNewWords.slice(0, 10).map(word => ({
           word,
           userCount: 0
         }));
 
-        // Update Redis with new cells
+        // COMPLETELY replace existing cells in Redis
         await context.redis.set(`subwords_${postId}`, 
           newCells.map(cell => cell.word).join(',')
         );
+
+        // Reset all vote counts for new words
+        for (const cell of newCells) {
+          await context.redis.set(`subwords_${postId}_${cell.word}_votes`, '0');
+          await context.redis.set(`subwords_${postId}_${cell.word}_users`, '0');
+        }
 
         // Broadcast cell update with new words
         try {
