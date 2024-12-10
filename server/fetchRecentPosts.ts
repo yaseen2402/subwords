@@ -77,10 +77,12 @@ export async function useGemini(context: TriggerContext, prompt: string) {
       .split(/[,\s]+/)  // Split on comma or whitespace
       .map((word: string) => word.trim().toUpperCase())
       .filter((word: string) => 
-        word.length >= 2 && 
+        word.length >= 4 && 
         word.length <= 10 && 
         !/^\d+$/.test(word) &&  // Exclude pure numbers
-        !/^[.,:()]/.test(word)  // Exclude punctuation
+        !/^[.,:()[\]"']/.test(word) &&  // Exclude punctuation and markers
+        !/^[A-Z]\./.test(word) &&  // Exclude numbered list markers
+        /^[A-Z]+$/.test(word)  // Ensure only alphabetic characters
       )
       .slice(0, 10);  // Limit to 10 words
 
@@ -113,9 +115,17 @@ export async function useGemini(context: TriggerContext, prompt: string) {
 export async function generateWordsFromTitles(context: Context | TriggerContext, titles: string[]): Promise<string[]> {
   const prompt = `
     From these Reddit post titles: ${titles.join(', ')}
-    Generate 10 unique words that could start a story.
-    The words can be Article, Noun, adjective, adverb, preposition or anything else but make sure it forms adding that word forms a coherent sentence. 
-    Ensure no repetition and aim for words between 4-10 characters.
+    Generate 10 unique, meaningful words for a story.
+    STRICT RULES:
+    - NO numbers
+    - NO punctuation
+    - NO list markers
+    - Words must be UPPERCASE
+    - Words between 4-10 characters
+    - Include diverse parts of speech: verbs, nouns, adjectives, adverbs
+    - Ensure words can contribute to an engaging narrative
+    
+    Example Good Output: CREATING BUILDING IMAGINE INSIDE THROUGH SEVERAL NUMEROUS EXPLORING SUDDENLY FINALLY
   `;
 
   console.log('Generating words from titles:', {
