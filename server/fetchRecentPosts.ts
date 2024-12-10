@@ -127,7 +127,7 @@ export async function generateWordsFromTitles(context: Context, titles: string[]
   return processedWords;
 }
 
-export async function generateFollowUpWords(context: Context, previousWord: string): Promise<string[]> {
+export async function generateFollowUpWords(context: TriggerContext | Context, previousWord: string): Promise<string[]> {
   const prompt = `
     Given the word "${previousWord}", generate 10 unique, interesting follow-up words 
     that could form a cohesive sentence or continue an engaging story. 
