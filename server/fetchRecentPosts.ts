@@ -33,8 +33,11 @@ export async function useGemini(context: TriggerContext, prompt: string) {
 
     if (typeof apiKey !== 'string') {
         throw new Error('Gemini API key is not set or is invalid');
-      }
+    }
       
+    console.log('API Key Status:', apiKey ? 'Key Present' : 'Key Missing');
+    console.log('Full Prompt:', prompt);
+
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent', {
       method: 'POST',
       headers: {
@@ -46,29 +49,48 @@ export async function useGemini(context: TriggerContext, prompt: string) {
           parts: [{ 
             text: prompt 
           }] 
-        }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 200
+        }
       })
     });
 
+    console.log('Response Status:', response.status, response.statusText);
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Full Error Response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}, ${errorText}`);
     }
 
     const data = await response.json();
-    const generatedText = data.candidates[0].content.parts[0].text;
+    console.log('Full API Response:', JSON.stringify(data, null, 2));
 
-    // Parse the response into an array of words
-    const words = generatedText.split(',')
-      // .map((word: string) => word.trim().toUpperCase())
-      // .filter((word: string) => word.length > 2 && word.length < 10);
+    // More robust parsing of Gemini response
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    console.log('Raw Generated Text:', generatedText);
+
+    const words = generatedText
+      .split(/[,\s]+/)  // Split on comma or whitespace
+      .map(word => word.trim().toUpperCase())
+      .filter(word => word.length >= 2 && word.length <= 10);
 
     console.log('Generated Words from Gemini:', words);
     console.log('Total Generated Words:', words.length);
-    console.log('Prompt Used:', prompt);
 
-    return words.slice(0, 100);
+    return words.length > 0 ? words.slice(0, 10) : [
+      "THE", "CEO", "CHESS", "BAD", "AN", 
+      "TO", "HONEY", "SHOT", "OF", "KARMA"
+    ];
   } catch (error) {
-    console.error('Error using Gemini:', error);
+    console.error('Comprehensive Gemini Error:', {
+      errorName: error instanceof Error ? error.name : 'Unknown Error',
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : 'No stack trace'
+    });
     
     // Fallback words if generation fails
     const fallbackWords = [
