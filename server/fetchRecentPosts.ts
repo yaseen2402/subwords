@@ -85,12 +85,46 @@ export async function useGemini(context: TriggerContext, prompt: string) {
 export async function generateWordsFromTitles(context: Context, titles: string[]): Promise<string[]> {
   const prompt = `
     From these Reddit post titles: ${titles.join(', ')}
-    Generate a list of 100 unique, interesting words that could form a meaningful story.
-    Include words from the titles and add creative, complementary words.
-    Provide the words as a comma-separated list, all in UPPERCASE.
+    Generate 10 unique, interconnected words that could form a coherent, engaging short story.
+    Words should be diverse, evocative, and capable of creating narrative progression.
+    Prioritize words that suggest action, emotion, or transformation.
+    Provide words as a comma-separated list, all in UPPERCASE.
+    Ensure no repetition and aim for words between 4-10 characters.
   `;
 
-  return await useGemini(context, prompt);
+  console.log('Generating words from titles:', {
+    titleCount: titles.length,
+    titles: titles
+  });
+
+  const generatedWords = await useGemini(context, prompt);
+
+  // Additional filtering and validation
+  const processedWords = generatedWords
+    .map(word => word.trim().toUpperCase())
+    .filter(word => 
+      word.length >= 4 && 
+      word.length <= 10 && 
+      /^[A-Z]+$/.test(word)
+    )
+    .slice(0, 10);
+
+  console.log('Processed words:', {
+    originalCount: generatedWords.length,
+    processedCount: processedWords.length,
+    words: processedWords
+  });
+
+  // Fallback mechanism
+  if (processedWords.length < 10) {
+    const fallbackWords = [
+      'DREAM', 'HOPE', 'QUEST', 'SPARK', 'BRAVE', 
+      'MAGIC', 'JOURNEY', 'WONDER', 'RISE', 'CHANGE'
+    ];
+    return [...processedWords, ...fallbackWords].slice(0, 10);
+  }
+
+  return processedWords;
 }
 
 export async function generateFollowUpWords(context: Context, previousWord: string): Promise<string[]> {

@@ -224,33 +224,42 @@ Devvit.addSchedulerJob({
 Devvit.addTrigger({
   event: 'PostCreate',
   onEvent: async (event, context) => {
-    console.log('PostCreate trigger fired', {
+    console.log('🚀 PostCreate Trigger Activated', {
       postId: event.post?.id,
-      subredditId: event.post?.subredditId,
-      fullEventData: JSON.stringify(event)
+      subredditId: event.post?.subredditId
     });
 
     if (!event.post || !event.post.id) {
-      console.error('Post data is missing from the event', {
-        fullEventData: JSON.stringify(event)
-      });
+      console.error('❌ Invalid post data', { event });
       return;
     }
     
     try {
-      console.log('Attempting to schedule job for post', event.post.id);
+      // Fetch recent post titles from the same subreddit
+      const titles = await fetchRecentPostTitles(context);
+      console.log('📜 Fetched Titles:', { 
+        count: titles.length, 
+        titles: titles.slice(0, 5) // Log first 5 titles
+      });
 
-      let activeJobs = JSON.parse(await context.redis.get(JOB_LIST_KEY) || '[]');
+      // Generate initial 10 words
+      const initialWords = await generateWordsFromTitles(context, titles);
+      console.log('🧩 Generated Initial Words:', initialWords);
+
+      // Store initial words in Redis with vote tracking
+      await context.redis.set(`subwords_${event.post.id}`, initialWords.join(','));
       
-      // If we're at the limit, remove the oldest job
-      if (activeJobs.length >= MAX_JOBS) {
-        const oldestJob = activeJobs.shift();
-        if (oldestJob) {
-          await context.scheduler.cancelJob(oldestJob.jobId);
-          console.log('Cancelled old job', { jobId: oldestJob.jobId, postId: oldestJob.postId });
-        }
+      // Initialize vote and user tracking for each word
+      for (const word of initialWords) {
+        await context.redis.set(`subwords_${event.post.id}_${word}_votes`, '0');
+        await context.redis.set(`subwords_${event.post.id}_${word}_users`, '0');
       }
 
+      // Initialize story tracking
+      await context.redis.set(`subwords_${event.post.id}_story`, '');
+      await context.redis.set(`subwords_${event.post.id}_word_count`, '0');
+
+      // Schedule periodic job to check word votes
       const jobId = await context.scheduler.runJob({
         cron: '*/30 * * * * *',
         name: 'CheckMostVotedWord',
@@ -263,29 +272,16 @@ Devvit.addTrigger({
         },
       });
 
-      console.log('Job scheduled successfully', { 
-        jobId, 
-        postId: event.post.id, 
-        subredditName: event.post.subredditId 
-      });
-
-      activeJobs.push({ jobId, postId: event.post.id });
-      await context.redis.set(JOB_LIST_KEY, JSON.stringify(activeJobs));
-      console.log('Updated active jobs list', { activeJobsCount: activeJobs.length });
-
-      console.log('Scheduled CheckMostVotedWord job', {
-        jobId,
+      console.log('✅ Game Initialization Complete', { 
         postId: event.post.id,
-        subredditId: event.post.subredditId
+        initialWordCount: initialWords.length,
+        jobId 
       });
-      await context.redis.set(`jobId_${event.post.id}`, jobId);
-    } catch (e) {
-      console.error('Error scheduling job:', {
-        error: e,
-        errorMessage: e instanceof Error ? e.message : 'Unknown error',
-        eventData: JSON.stringify(event)
+
+    } catch (error) {
+      console.error('❌ Post Creation Error', { 
+        error: error instanceof Error ? error.message : error 
       });
-      throw e;
     }
   },
 });
