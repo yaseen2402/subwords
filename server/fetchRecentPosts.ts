@@ -143,7 +143,7 @@ export async function generateFollowUpWords(context: TriggerContext | Context, c
   
   // Filter out words already in the story
   const usedWords = currentStory.toUpperCase().split(' ');
-  const uniqueFollowUpWords = followUpWords.filter(word => 
+  const uniqueFollowUpWords = followUpWords.filter((word: string) => 
     !usedWords.includes(word)
   );
   
