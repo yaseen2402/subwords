@@ -191,7 +191,7 @@ Devvit.addSchedulerJob({
             { word: 'GAME', userCount: 0 },
             { word: 'PLAY', userCount: 0 },
             { word: 'MORE', userCount: 0 }
-          ];
+          ] as WordData[];
         }
 
         // COMPLETELY replace existing cells in Redis
