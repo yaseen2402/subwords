@@ -176,58 +176,60 @@ export async function generateConnectorWords(context: TriggerContext | Context, 
     - Words must be UPPERCASE
     - Prefer natural, grammatically correct connectors
     - Aim to create a smooth transition in the story
+    - If no suitable connectors are found, return an empty array
   `;
 
   const connectorWords = await useGemini(context, prompt);
   
-  // Ensure we have at least some connectors
-  const fallbackConnectors = ['IS', 'THE', 'OF', 'WITH', 'AND', 'IN', 'A'];
-  
-  // If Gemini returns a single word, treat it as a connector
-  const processedConnectors = connectorWords.length === 1 && 
-    ['IS', 'ARE', 'WAS', 'WERE', 'THE', 'A', 'AN', 'OF', 'WITH', 'AND', 'IN'].includes(connectorWords[0])
-    ? connectorWords
-    : connectorWords.filter((word: string) => 
-        fallbackConnectors.includes(word) || 
-        ['IS', 'ARE', 'WAS', 'WERE', 'THE', 'A', 'AN', 'OF', 'WITH', 'AND', 'IN'].includes(word)
-      );
+  // Predefined list of valid connectors
+  const validConnectors = [
+    'IS', 'ARE', 'WAS', 'WERE', 'THE', 'A', 'AN', 
+    'OF', 'WITH', 'AND', 'IN', 'TO', 'FOR', 'BY'
+  ];
 
+  // Filter and validate connector words
+  const processedConnectors = connectorWords.filter((word: string) => 
+    validConnectors.includes(word)
+  );
+
+  // If no valid connectors found, return a minimal set
   return processedConnectors.length > 0 
-    ? processedConnectors.slice(0, 3) 
-    : fallbackConnectors.slice(0, 3);
+    ? processedConnectors.slice(0, 3)
+    : ['THE', 'OF', 'AND'].slice(0, 3);
 }
 
 export async function generateFollowUpWords(context: TriggerContext | Context, currentStory: string): Promise<string[]> {
   const prompt = `
     Given the current story context: "${currentStory}",
-     provide a list of 10 words (including prepositions, articles, verbs, nouns, adjectives, etc.) that can be used to continue the phrase "${currentStory}"  
-     STRICT RULES:
+    generate 10 unique, engaging words to continue the narrative.
+    
+    STRICT RULES:
     - NO numbers
     - NO punctuation
     - NO list markers
     - Words must be UPPERCASE
-    - Ensure words can contribute to an engaging narrative
-    - If applicable, consider words related to characters, settings, or plot elements from the story context.
-    - There should be atleast one article and one preposition in the words you return 
+    - Include diverse word types: nouns, verbs, adjectives
+    - Consider story context and potential narrative directions
   `;
 
   const followUpWords = await useGemini(context, prompt);
   
-  // Filter out words already in the story
   const usedWords = currentStory.toUpperCase().split(' ');
   const uniqueFollowUpWords = followUpWords.filter((word: string) => 
-    !usedWords.includes(word)
+    !usedWords.includes(word) && word.length >= 2
   );
   
-  // Ensure we have at least 10 words, use fallback if needed
-  if (uniqueFollowUpWords.length < 10) {
-    const fallbackWords = [
-      "ADVENTURE", "MYSTERY", "COURAGE", "DREAM", "JOURNEY", 
-      "HOPE", "CHALLENGE", "DISCOVERY", "WISDOM", "DESTINY"
-    ].filter(word => !usedWords.includes(word));
-    
-    return [...uniqueFollowUpWords, ...fallbackWords].slice(0, 10);
-  }
+  const fallbackWords = [
+    "ADVENTURE", "MYSTERY", "COURAGE", "DREAM", "JOURNEY", 
+    "HOPE", "CHALLENGE", "DISCOVERY", "WISDOM", "DESTINY",
+    "EPIC", "QUEST", "MAGIC", "HERO", "LEGEND"
+  ];
 
-  return uniqueFollowUpWords.slice(0, 10);
+  const combinedWords = [...new Set([...uniqueFollowUpWords, ...fallbackWords])]
+    .filter(word => !usedWords.includes(word))
+    .slice(0, 10);
+
+  return combinedWords.length > 0 
+    ? combinedWords 
+    : fallbackWords.slice(0, 10);
 }

@@ -159,7 +159,9 @@ Devvit.addSchedulerJob({
         const connectorWords = await generateConnectorWords(context, upperMostVotedWord);
         
         // Append connectors to the most voted word
-        const expandedWord = `${upperMostVotedWord} ${connectorWords.join(' ')}`.trim();
+        const expandedWord = connectorWords.length > 0 
+          ? `${upperMostVotedWord} ${connectorWords.join(' ')}`.trim()
+          : upperMostVotedWord;
         
         // Update story with expanded word
         const expandedStory = `${currentStory} ${expandedWord}`.trim();
