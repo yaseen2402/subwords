@@ -224,6 +224,6 @@ export async function generateFollowUpWords(context: TriggerContext | Context, c
     .slice(0, 10);
 
   return combinedWords.length > 0 
-    ? combinedWords 
+    ? uniqueFollowUpWords 
     : fallbackWords.slice(0, 10);
 }
