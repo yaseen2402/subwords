@@ -120,9 +120,18 @@ Devvit.addSchedulerJob({
       //   mostVotedWord: mostVotedWord
       // });
 
-      console.log('Most voted word:', mostVotedWord);
+      console.log('Most voted word selection process:', {
+        wordVotes: wordVotes,
+        mostVotedWord: mostVotedWord,
+        postId: event.data?.postId
+      });
 
       if (mostVotedWord) {
+        console.log('Detailed Word Processing:', {
+          mostVotedWord: mostVotedWord,
+          currentStory: await context.redis.get(`subwords_${postId}_story`) || 'No Story',
+          currentCells: await context.redis.get(`subwords_${postId}`) || 'No Cells'
+        });
         const currentStory = await context.redis.get(`subwords_${postId}_story`) || '';
         const initialStory = `${currentStory} ${mostVotedWord}`.trim();
           
@@ -170,11 +179,21 @@ Devvit.addSchedulerJob({
         // Generate follow-up words based on the expanded story context
         const newFollowUpWords = await generateFollowUpWords(context, expandedStory);
         
+        console.log('Follow-up Word Generation:', {
+          expandedStory: expandedStory,
+          generatedWords: newFollowUpWords
+        });
+
         // Filter out words already used in the story
         const usedWords = expandedStory.split(' ');
         const availableNewWords = newFollowUpWords.filter(word => 
           !usedWords.includes(word)
         );
+
+        console.log('Available New Words:', {
+          usedWords: usedWords,
+          availableNewWords: availableNewWords
+        });
 
         // Create new cells, replacing ALL existing cells
         let newCells = availableNewWords.slice(0, 10).map(word => ({
@@ -194,6 +213,11 @@ Devvit.addSchedulerJob({
           ] as WordData[];
         }
 
+        console.log('New Cells Generated:', {
+          cellCount: newCells.length,
+          words: newCells.map(cell => cell.word)
+        });
+
         // COMPLETELY replace existing cells in Redis
         await context.redis.set(`subwords_${postId}`, 
           newCells.map(cell => cell.word).join(',')
@@ -209,18 +233,21 @@ Devvit.addSchedulerJob({
         try {
           console.log('Broadcasting new cells:', {
             cellCount: newCells.length,
-            words: newCells.map(cell => cell.word)
+            words: newCells.map(cell => cell.word),
+            postId: postId
           });
 
           await context.realtime.send('game_updates', {
             type: 'updateCells',
-            cells: newCells
+            cells: newCells,
+            postId: postId  // Add postId to help with debugging
           });
         } catch (error) {
           console.error('Failed to broadcast cell update', {
-            error: error,
+            error: error instanceof Error ? error.message : error,
             newCellsCount: newCells.length,
-            newCellsWords: newCells.map(cell => cell.word)
+            newCellsWords: newCells.map(cell => cell.word),
+            postId: postId
           });
 
           // Fallback: Use Redis to store cell update
