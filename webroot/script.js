@@ -9,7 +9,7 @@ class WordGuesserGame {
       this.username = 'Guest';
       this.cellSelections = {};
       this.currentCells = []; 
-      this.gameRound = 0;  // Track game round
+      this.gameRound = 1;  // Start game round at 1
 
       this.channel = new BroadcastChannel('game_updates');
 
@@ -56,7 +56,7 @@ class WordGuesserGame {
                 const {currentCells, gameRound} = message.data;
                 console.log('Update game cells:', currentCells);
                 this.currentCells = currentCells || [];
-                this.gameRound = gameRound !== undefined ? gameRound : this.gameRound + 1;
+                this.gameRound = gameRound !== undefined ? gameRound : (this.gameRound || 1);
                 this.updateGridFromGameState();
                 this.updateGameRoundDisplay();
             }
