@@ -29,87 +29,64 @@ export async function fetchRecentPostTitles(context: Context | TriggerContext) {
 
 export async function useGemini(context: TriggerContext, prompt: string) {
   try {
-    // Replace with your actual Gemini API endpoint and key
     const apiKey = await context.settings.get('gemini-api-key');
 
-    if (typeof apiKey !== 'string') {
+    if (typeof apiKey !== 'string' || apiKey.trim() === '') {
         throw new Error('Gemini API key is not set or is invalid');
     }
-      
-    console.log('API Key Status:', apiKey ? 'Key Present' : 'Key Missing');
+
+    console.log('API Key Status: Key Present');
     console.log('Full Prompt:', prompt);
 
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey || ''
+        'x-goog-api-key': apiKey
       },
       body: JSON.stringify({
         contents: [{ 
-          parts: [{ 
-            text: prompt 
-          }] 
+          parts: [{ text: prompt }],
+          role: 'user'
         }],
         generationConfig: {
-          temperature: 1,
-          maxOutputTokens: 200
+          temperature: 0.7,
+          maxOutputTokens: 200,
+          topK: 40,
+          topP: 0.95
         }
       })
     });
 
-    console.log('Response Status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Full Error Response:', errorText);
-      throw new Error(`HTTP error! status: ${response.status}, ${errorText}`);
+      throw new Error(`Gemini API Error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('Full API Response:', JSON.stringify(data, null, 2));
-
-    // More robust parsing of Gemini response
     const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
-    console.log('Raw Generated Text:', generatedText);
-
     const words = generatedText
-      .split(/[,\s]+/)  // Split on comma or whitespace
-      .map((word: string) => word.trim().toUpperCase())
-      .filter((word: string) => 
-        word.length >= 4 && 
+      .split(/[,\s]+/)
+      .map(word => word.trim().toUpperCase())
+      .filter(word => 
+        word.length >= 2 && 
         word.length <= 10 && 
-        !/^\d+$/.test(word) &&  // Exclude pure numbers
-        !/^[.,:()[\]"']/.test(word) &&  // Exclude punctuation and markers
-        !/^[A-Z]\./.test(word) &&  // Exclude numbered list markers
-        /^[A-Z]+$/.test(word)  // Ensure only alphabetic characters
+        /^[A-Z]+$/.test(word)
       )
-      .slice(0, 10);  // Limit to 10 words
+      .slice(0, 10);
 
-    console.log('Generated Words from Gemini:', words);
-    console.log('Total Generated Words:', words.length);
-
-    return words.length > 0 ? words.slice(0, 10) : [
-      "THE", "CEO", "CHESS", "BAD", "AN", 
-      "TO", "HONEY", "SHOT", "OF", "KARMA"
+    console.log('Generated Words:', words);
+    return words.length > 0 ? words : [
+      "THE", "OF", "AND", "A", "IN", 
+      "TO", "IS", "FOR", "WITH", "BY"
     ];
   } catch (error) {
-    console.error('Comprehensive Gemini Error:', {
-      errorName: error instanceof Error ? error.name : 'Unknown Error',
-      errorMessage: error instanceof Error ? error.message : String(error),
-      errorStack: error instanceof Error ? error.stack : 'No stack trace'
-    });
-    
-    // Fallback words if generation fails
-    const fallbackWords = [
-      "THE", "CEO", "CHESS", "BAD", "AN", 
-      "TO", "HONEY", "SHOT", "OF", "KARMA",
-      "A", "NOT", "NOBLE", "GOOD", "PEACE"
+    console.error('Gemini Generation Error:', error);
+    return [
+      "THE", "OF", "AND", "A", "IN", 
+      "TO", "IS", "FOR", "WITH", "BY"
     ];
-
-    console.log('Using Fallback Words:', fallbackWords);
-    return fallbackWords;
   }
 }
 
