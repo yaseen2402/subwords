@@ -153,9 +153,19 @@ Devvit.addSchedulerJob({
           return;
         }
 
-        // Generate ALL new words based on the current story
-        const storyContext = await context.redis.get(`subwords_${postId}_story`) || '';
-        const newFollowUpWords = await generateFollowUpWords(context, storyContext);
+        // Generate connectors for the most voted word
+        const mostVotedWord = mostVotedWord.toUpperCase();
+        const connectorWords = await generateConnectorWords(context, mostVotedWord);
+        
+        // Append connectors to the most voted word
+        const expandedWord = `${mostVotedWord} ${connectorWords.join(' ')}`.trim();
+        
+        // Update story with expanded word
+        const updatedStory = `${currentStory} ${expandedWord}`.trim();
+        await context.redis.set(`subwords_${postId}_story`, updatedStory);
+
+        // Generate follow-up words based on the expanded story context
+        const newFollowUpWords = await generateFollowUpWords(context, updatedStory);
         
         // Filter out words already used in the story
         const usedWords = updatedStory.split(' ');
