@@ -65,15 +65,32 @@ class WordGuesserGame {
                 }
         
                 if (gameRound !== undefined) {
-                    console.log('Updating game round:', gameRound);
-                    // Ensure round is always incremented, even if message doesn't match exactly
-                    this.gameRound = Math.max(this.gameRound, gameRound);
-                    this.updateGameRoundDisplay();
+                    console.log('Received game round update:', {
+                        currentRound: this.gameRound,
+                        newRound: gameRound,
+                        messageType: message.type
+                    });
+
+                    // Always increment the round, even if the received round is lower
+                    // This ensures the round always moves forward
+                    this.gameRound = Math.max(this.gameRound + 1, gameRound);
         
-                    // Optional: Broadcast round update back to parent if needed
+                    console.log('Updated game round:', {
+                        finalRound: this.gameRound
+                    });
+
+                    this.updateGameRoundDisplay();
+
+                    // Broadcast round update back to parent if needed
                     window.parent?.postMessage({
-                      type: 'updateGameRound',
-                      data: { gameRound: this.gameRound }
+                        type: 'updateGameRound',
+                        data: { 
+                            gameRound: this.gameRound,
+                            debug: {
+                                originalRound: gameRound,
+                                messageType: message.type
+                            }
+                        }
                     }, '*');
                 }
             }

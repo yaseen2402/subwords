@@ -162,17 +162,35 @@ Devvit.addSchedulerJob({
         const newRound = currentRound + 1;
         
         // Always increment and save the round when a most voted word is processed
+        console.log('Attempting to update game round:', {
+          currentRound: currentRound,
+          newRound: newRound,
+          gameRoundKey: gameRoundKey,
+          postId: postId
+        });
+
         await context.redis.set(gameRoundKey, newRound.toString());
 
         // Broadcast game round update in realtime
         try {
+          console.log('Sending game round update via realtime', {
+            type: 'updateGameRound',
+            gameRound: newRound,
+            postId: postId
+          });
+
           await context.realtime.send('game_updates', {
             type: 'updateGameRound',
             gameRound: newRound,
             postId: postId
           });
         } catch (error) {
-          console.error('Failed to broadcast game round update', error);
+          console.error('Failed to broadcast game round update', {
+            error: error instanceof Error ? error.message : error,
+            currentRound: currentRound,
+            newRound: newRound,
+            gameRoundKey: gameRoundKey
+          });
         }
 
         // Check story length and game status
@@ -420,10 +438,20 @@ Devvit.addCustomPostType({
       const allWordsStr = await context.redis.get(`subwords_${context.postId}_all_words`) || '';
       const allWords = allWordsStr ? allWordsStr.split(',') : [];
       
-      // Retrieve current game round, defaulting to 1
+      // Retrieve current game round, with more robust initialization
       const gameRoundKey = `subwords_${context.postId}_game_round`;
-      const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
-      console.log('Current Game Round:', currentRound);
+      let currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
+      
+      // Ensure the round is at least 1
+      currentRound = Math.max(1, currentRound);
+      
+      // Always set the initial round to 1 if not set or invalid
+      await context.redis.set(gameRoundKey, currentRound.toString());
+      
+      console.log('Initialized Game Round:', {
+        gameRoundKey: gameRoundKey,
+        currentRound: currentRound
+      });
 
       if (redisCells) {
         const existingCells = redisCells.split(',');
