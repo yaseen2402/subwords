@@ -125,6 +125,12 @@ class WordGuesserGame {
       const currentStory = this.storyElement.innerText;
       const updatedStory = `${currentStory} ${wordToAppend}`.trim();
       this.storyElement.innerText = updatedStory;
+
+      // Increment game round if signaled
+      if (data.incrementRound) {
+        this.gameRound++;
+        this.updateGameRoundDisplay();
+      }
     }
   }
   updateGridFromGameState() {

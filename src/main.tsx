@@ -644,7 +644,8 @@ Devvit.addCustomPostType({
           await channel2.send({
             type: 'storyUpdate',
             word: storyText,
-            story: storyText
+            story: storyText,
+            incrementRound: true  // Signal to increment round
           });
           break;
         case 'voteWord':
