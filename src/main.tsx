@@ -169,7 +169,7 @@ Devvit.addSchedulerJob({
         const newFollowUpWords = await generateFollowUpWords(context, expandedStory);
         
         // Filter out words already used in the story
-        const usedWords = updatedStory.split(' ');
+        const usedWords = expandedStory.split(' ');
         const availableNewWords = newFollowUpWords.filter(word => 
           !usedWords.includes(word)
         );
