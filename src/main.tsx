@@ -207,16 +207,18 @@ Devvit.addSchedulerJob({
         try {
           await context.realtime.send('updateStory', {
             type: 'storyUpdate',
-            word: expandedWord, // Use the full expanded word including connectors
-            story: expandedStory
+            word: expandedWord, // Full expanded word with connectors
+            story: expandedStory,
+            expandedWord: expandedWord // Explicitly include expanded word
           });
-          console.log('Story update broadcasted');
+          console.log('Story update broadcasted with full expanded word');
         } catch (realtimeError) {
           console.error('Failed to send realtime event', {
             error: realtimeError,
             message: {
               word: expandedWord,
-              story: expandedStory
+              story: expandedStory,
+              expandedWord: expandedWord
             }
           });
 
@@ -224,6 +226,7 @@ Devvit.addSchedulerJob({
           await context.redis.set(`subwords_${postId}_last_story_update`, JSON.stringify({
             word: expandedWord,
             story: expandedStory,
+            expandedWord: expandedWord,
             timestamp: new Date().toISOString()
           }));
         }

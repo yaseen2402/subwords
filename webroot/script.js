@@ -114,10 +114,13 @@ class WordGuesserGame {
 
   updateTextField(data) {
     console.log("Updating text field with latest story", data);
-    if (data && data.word) {
-      // Append the most voted word to the story
+    if (data && (data.expandedWord || data.word)) {
+      // Prefer expandedWord, fallback to word
+      const wordToAppend = data.expandedWord || data.word;
+      
+      // Append the full word to the story
       const currentStory = this.storyElement.innerText;
-      const updatedStory = `${currentStory} ${data.word}`.trim();
+      const updatedStory = `${currentStory} ${wordToAppend}`.trim();
       this.storyElement.innerText = updatedStory;
     }
   }
