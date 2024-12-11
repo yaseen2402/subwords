@@ -90,11 +90,11 @@ Devvit.addSchedulerJob({
     const wordVotes: {[word: string]: number} = {};
     const cells = await context.redis.get(`subwords_${postId}`) || '';
     
-    console.log('Cells from Redis:', cells, 'for postId:', postId);
+    // console.log('Cells from Redis:', cells, 'for postId:', postId);
     
     if (cells) {
       const words = cells.split(',');
-      console.log('Words to check:', words);
+      // console.log('Words to check:', words);
       
       for (const word of words) {
         const voteKey = `subwords_${postId}_${word}_votes`;
