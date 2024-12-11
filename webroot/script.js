@@ -53,14 +53,20 @@ class WordGuesserGame {
                 this.gameRound = gameRound || 1;
                 this.updateGameRoundDisplay();
             } 
-            if (message.type === 'updateGameCells') {
-                console.log("reached inside updateGameCells if statement")
+            if (message.type === 'updateGameCells' || message.type === 'updateGameRound') {
+                console.log("reached inside updateGameCells/updateGameRound if statement")
                 const {currentCells, gameRound} = message.data;
-                console.log('Update game cells:', currentCells);
-                this.currentCells = currentCells || [];
-                this.gameRound = gameRound !== undefined ? gameRound : (this.gameRound || 1);
-                this.updateGridFromGameState();
-                this.updateGameRoundDisplay();
+                
+                if (currentCells) {
+                    console.log('Update game cells:', currentCells);
+                    this.currentCells = currentCells || [];
+                    this.updateGridFromGameState();
+                }
+                
+                if (gameRound !== undefined) {
+                    this.gameRound = gameRound;
+                    this.updateGameRoundDisplay();
+                }
             }
 
             if(message.type === 'updateTextField'){

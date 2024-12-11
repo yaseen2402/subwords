@@ -151,16 +151,21 @@ Devvit.addSchedulerJob({
         const currentCells = currentCellsStr.split(',').filter(word => word !== mostVotedWord);
 
         const gameRoundKey = `subwords_${context.postId}_game_round`;
+        
+        // Ensure game round is initialized to 1 if not set
         const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
         const newRound = currentRound + 1;
+        
+        // Always increment and save the round when a most voted word is processed
         await context.redis.set(gameRoundKey, newRound.toString());
 
         // Broadcast game round update in realtime
         try {
           await context.realtime.send('game_updates', {
-            type: 'updateGameCells',
+            type: 'updateGameRound',
             data: {
-              gameRound: newRound
+              gameRound: newRound,
+              postId: context.postId
             }
           });
         } catch (error) {
@@ -411,6 +416,11 @@ Devvit.addCustomPostType({
       const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
       const allWordsStr = await context.redis.get(`subwords_${context.postId}_all_words`) || '';
       const allWords = allWordsStr ? allWordsStr.split(',') : [];
+      
+      // Retrieve current game round, defaulting to 1
+      const gameRoundKey = `subwords_${context.postId}_game_round`;
+      const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
+      console.log('Current Game Round:', currentRound);
 
       if (redisCells) {
         const existingCells = redisCells.split(',');
