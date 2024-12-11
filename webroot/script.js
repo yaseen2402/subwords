@@ -56,16 +56,17 @@ class WordGuesserGame {
             if (message.type === 'updateGameCells' || message.type === 'updateGameRound') {
                 console.log("Received game update:", message);
                 const {currentCells, gameRound} = message.data || {};
-            
+        
                 if (currentCells) {
                     console.log('Update game cells:', currentCells);
                     this.currentCells = currentCells || [];
                     this.updateGridFromGameState();
                 }
-            
+        
                 if (gameRound !== undefined) {
                     console.log('Updating game round:', gameRound);
-                    this.gameRound = gameRound;
+                    // Ensure round is always incremented, even if message doesn't match exactly
+                    this.gameRound = Math.max(this.gameRound, gameRound);
                     this.updateGameRoundDisplay();
                 }
             }
