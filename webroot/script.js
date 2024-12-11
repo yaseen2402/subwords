@@ -9,6 +9,7 @@ class WordGuesserGame {
       this.username = 'Guest';
       this.cellSelections = {};
       this.currentCells = []; 
+      this.gameRound = 0;  // Track game round
 
       this.channel = new BroadcastChannel('game_updates');
 
@@ -52,10 +53,12 @@ class WordGuesserGame {
             } 
             if (message.type === 'updateGameCells') {
                 console.log("reached inside updateGameCells if statement")
-                const {currentCells} = message.data;
+                const {currentCells, gameRound} = message.data;
                 console.log('Update game cells:', currentCells);
                 this.currentCells = currentCells || [];
+                this.gameRound = gameRound || this.gameRound;
                 this.updateGridFromGameState();
+                this.updateGameRoundDisplay();
             }
 
             if(message.type === 'updateTextField'){
@@ -177,6 +180,18 @@ class WordGuesserGame {
     });
   }
 
+  updateGameRoundDisplay() {
+    // Create or update game round display
+    let gameRoundEl = document.getElementById('game-round');
+    if (!gameRoundEl) {
+      gameRoundEl = document.createElement('div');
+      gameRoundEl.id = 'game-round';
+      gameRoundEl.classList.add('game-round');
+      document.getElementById('game-container').prepend(gameRoundEl);
+    }
+    gameRoundEl.textContent = `Round: ${this.gameRound}`;
+  }
+
   showGameOverScreen() {
     // Create a game over overlay
     const gameOverOverlay = document.createElement('div');
@@ -184,7 +199,7 @@ class WordGuesserGame {
     gameOverOverlay.innerHTML = `
       <div class="game-over-content">
         <h1>Game Over</h1>
-        <p>You've used all available words!</p>
+        <p>Final Round: ${this.gameRound}</p>
         <p>Final Story: ${this.storyElement.innerText}</p>
         <button id="restart-game">Play Again</button>
       </div>

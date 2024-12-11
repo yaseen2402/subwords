@@ -72,6 +72,15 @@ function sessionId(): string {
 Devvit.addSchedulerJob({
   name: 'CheckMostVotedWord',
   onRun: async (event, context) => {
+    // Track game round number
+    const gameRoundKey = `subwords_${event.data?.postId}_game_round`;
+    const currentRound = parseInt(await context.redis.get(gameRoundKey) || '0') + 1;
+    await context.redis.set(gameRoundKey, currentRound.toString());
+
+    console.log('Game Round:', {
+      postId: event.data?.postId,
+      round: currentRound
+    });
     // console.log('VotedWordCheck job started', {
     //   postId: event.data?.postId || 'No postId',
     //   timestamp: new Date().toISOString(),
@@ -240,7 +249,8 @@ Devvit.addSchedulerJob({
           await context.realtime.send('game_updates', {
             type: 'updateCells',
             cells: newCells,
-            postId: postId  // Add postId to help with debugging
+            postId: postId,
+            gameRound: currentRound  // Add game round to broadcast
           });
         } catch (error) {
           console.error('Failed to broadcast cell update', {
@@ -260,9 +270,10 @@ Devvit.addSchedulerJob({
         try {
           await context.realtime.send('updateStory', {
             type: 'storyUpdate',
-            word: expandedWord, // Full expanded word with connectors
+            word: expandedWord,
             story: expandedStory,
-            expandedWord: expandedWord // Explicitly include expanded word
+            expandedWord: expandedWord,
+            gameRound: currentRound  // Add game round to story update
           });
           console.log('Story update broadcasted with full expanded word');
         } catch (realtimeError) {
