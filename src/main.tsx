@@ -272,7 +272,6 @@ Devvit.addSchedulerJob({
             word: expandedWord,
             story: expandedStory,
             expandedWord: expandedWord,
-            gameRound: currentRound  // Add game round to story update
           });
           console.log('Story update broadcasted with full expanded word');
         } catch (realtimeError) {
