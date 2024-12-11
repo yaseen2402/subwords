@@ -292,28 +292,28 @@ Devvit.addTrigger({
       }
       
       // Fetch recent post titles from the same subreddit
-      const titles = await fetchRecentPostTitles(context);
-      console.log('📜 Fetched Titles:', { 
-        count: titles.length, 
-        titles: titles.slice(0, 5) // Log first 5 titles
-      });
+      // const titles = await fetchRecentPostTitles(context);
+      // console.log('📜 Fetched Titles:', { 
+      //   count: titles.length, 
+      //   titles: titles.slice(0, 5) // Log first 5 titles
+      // });
 
-      // Generate initial 10 words
-      const initialWords = await generateWordsFromTitles(context, titles);
-      console.log('🧩 Generated Initial Words:', initialWords);
+      // // Generate initial 10 words
+      // const initialWords = await generateWordsFromTitles(context, titles);
+      // console.log('🧩 Generated Initial Words:', initialWords);
 
-      // Store initial words in Redis with vote tracking
-      await context.redis.set(`subwords_${event.post.id}`, initialWords.join(','));
+      // // Store initial words in Redis with vote tracking
+      // await context.redis.set(`subwords_${event.post.id}`, initialWords.join(','));
       
-      // Initialize vote and user tracking for each word
-      for (const word of initialWords) {
-        await context.redis.set(`subwords_${event.post.id}_${word}_votes`, '0');
-        await context.redis.set(`subwords_${event.post.id}_${word}_users`, '0');
-      }
+      // // Initialize vote and user tracking for each word
+      // for (const word of initialWords) {
+      //   await context.redis.set(`subwords_${event.post.id}_${word}_votes`, '0');
+      //   await context.redis.set(`subwords_${event.post.id}_${word}_users`, '0');
+      // }
 
-      // Initialize story tracking
-      await context.redis.set(`subwords_${event.post.id}_story`, '');
-      await context.redis.set(`subwords_${event.post.id}_word_count`, '0');
+      // // Initialize story tracking
+      // await context.redis.set(`subwords_${event.post.id}_story`, '');
+      // await context.redis.set(`subwords_${event.post.id}_word_count`, '0');
 
       // Schedule periodic job to check word votes
       const jobId = await context.scheduler.runJob({
@@ -334,7 +334,7 @@ Devvit.addTrigger({
 
       console.log('✅ Game Initialization Complete', { 
         postId: event.post.id,
-        initialWordCount: initialWords.length,
+        // initialWordCount: initialWords.length,
         jobId 
       });
 
