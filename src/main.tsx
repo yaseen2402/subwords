@@ -72,11 +72,11 @@ function sessionId(): string {
 Devvit.addSchedulerJob({
   name: 'CheckMostVotedWord',
   onRun: async (event, context) => {
-    console.log('VotedWordCheck job started', {
-      postId: event.data?.postId || 'No postId',
-      timestamp: new Date().toISOString(),
-      fullEventData: JSON.stringify(event)
-    });
+    // console.log('VotedWordCheck job started', {
+    //   postId: event.data?.postId || 'No postId',
+    //   timestamp: new Date().toISOString(),
+    //   fullEventData: JSON.stringify(event)
+    // });
     
     if (!event.data?.postId) {
       console.error('No postId provided to CheckMostVotedWord job', {
