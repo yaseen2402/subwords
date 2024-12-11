@@ -164,6 +164,35 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
   return processedWords;
 }
 
+export async function generateConnectorWords(context: TriggerContext | Context, lastWord: string): Promise<string[]> {
+  const prompt = `
+    Given the last word "${lastWord}", generate 1-3 connector words.
+    These should be articles, prepositions, conjunctions, or helping verbs.
+    
+    STRICT RULES:
+    - NO numbers
+    - NO punctuation
+    - NO list markers
+    - Words must be UPPERCASE
+    - Prefer natural, grammatically correct connectors
+    - Aim to create a smooth transition in the story
+  `;
+
+  const connectorWords = await useGemini(context, prompt);
+  
+  // Ensure we have at least some connectors
+  const fallbackConnectors = ['IS', 'THE', 'OF', 'WITH', 'AND', 'IN', 'A'];
+  
+  const validConnectors = connectorWords.filter((word: string) => 
+    fallbackConnectors.includes(word) || 
+    ['IS', 'ARE', 'WAS', 'WERE', 'THE', 'A', 'AN', 'OF', 'WITH', 'AND', 'IN'].includes(word)
+  );
+
+  return validConnectors.length > 0 
+    ? validConnectors.slice(0, 3) 
+    : fallbackConnectors.slice(0, 3);
+}
+
 export async function generateFollowUpWords(context: TriggerContext | Context, currentStory: string): Promise<string[]> {
   const prompt = `
     Given the current story context: "${currentStory}",
