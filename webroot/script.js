@@ -92,6 +92,12 @@ class WordGuesserGame {
                             }
                         }
                     }, '*');
+
+                    // Broadcast to the game updates channel
+                    this.channel.postMessage({
+                        type: 'gameRoundUpdate',
+                        gameRound: this.gameRound
+                    });
                 }
             }
 
@@ -124,6 +130,13 @@ class WordGuesserGame {
             console.log('Game over received:', event.data);
             this.currentCells = [{ word: 'GAME OVER', userCount: 0 }];
             this.updateGridFromGameState();
+            break;
+          case 'gameRoundUpdate':
+            console.log('Received game round update via channel:', event.data);
+            if (event.data.gameRound !== undefined) {
+              this.gameRound = Math.max(this.gameRound, event.data.gameRound);
+              this.updateGameRoundDisplay();
+            }
             break;
         }
       }
