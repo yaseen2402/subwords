@@ -117,6 +117,7 @@ class WordGuesserGame {
 
     this.channel.onmessage = (event) => {
       if (event.data) {
+        console.log('Channel message received:', event.data);
         switch (event.data.type) {
           case 'updateCells':
             console.log('Received cell update:', event.data.cells);
@@ -125,7 +126,6 @@ class WordGuesserGame {
             break;
           case 'storyUpdate':
             console.log('Received story update via channel:', event.data);
-            // Support both direct story and word+story formats
             const storyToDisplay = event.data.story || 
                                    (event.data.word ? `${this.storyElement.innerText} ${event.data.word}` : '');
             this.storyElement.innerText = storyToDisplay.trim();
@@ -135,11 +135,20 @@ class WordGuesserGame {
             this.currentCells = [{ word: 'GAME OVER', userCount: 0 }];
             this.updateGridFromGameState();
             break;
-          case 'updateGameRound':
+          case 'gameRoundUpdate':
             console.log('Received game round update:', event.data);
             if (event.data.gameRound !== undefined) {
               this.gameRound = event.data.gameRound;
               this.updateGameRoundDisplay();
+              
+              // Broadcast round update back to parent
+              window.parent?.postMessage({
+                type: 'updateGameRound',
+                data: { 
+                  gameRound: this.gameRound,
+                  debug: 'Channel round update'
+                }
+              }, '*');
             }
             break;
         }

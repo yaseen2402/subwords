@@ -183,7 +183,7 @@ Devvit.addSchedulerJob({
           await context.redis.set(gameRoundKey, newRound.toString());
 
           await context.realtime.send('game_updates', {
-            type: 'updateGameRound',
+            type: 'gameRoundUpdate',
             gameRound: newRound,
             postId: postId
           });
