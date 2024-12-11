@@ -183,13 +183,17 @@ export async function generateConnectorWords(context: TriggerContext | Context, 
   // Ensure we have at least some connectors
   const fallbackConnectors = ['IS', 'THE', 'OF', 'WITH', 'AND', 'IN', 'A'];
   
-  const validConnectors = connectorWords.filter((word: string) => 
-    fallbackConnectors.includes(word) || 
-    ['IS', 'ARE', 'WAS', 'WERE', 'THE', 'A', 'AN', 'OF', 'WITH', 'AND', 'IN'].includes(word)
-  );
+  // If Gemini returns a single word, treat it as a connector
+  const processedConnectors = connectorWords.length === 1 && 
+    ['IS', 'ARE', 'WAS', 'WERE', 'THE', 'A', 'AN', 'OF', 'WITH', 'AND', 'IN'].includes(connectorWords[0])
+    ? connectorWords
+    : connectorWords.filter((word: string) => 
+        fallbackConnectors.includes(word) || 
+        ['IS', 'ARE', 'WAS', 'WERE', 'THE', 'A', 'AN', 'OF', 'WITH', 'AND', 'IN'].includes(word)
+      );
 
-  return validConnectors.length > 0 
-    ? validConnectors.slice(0, 3) 
+  return processedConnectors.length > 0 
+    ? processedConnectors.slice(0, 3) 
     : fallbackConnectors.slice(0, 3);
 }
 
