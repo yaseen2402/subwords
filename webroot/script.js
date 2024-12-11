@@ -71,9 +71,8 @@ class WordGuesserGame {
                         messageType: message.type
                     });
 
-                    // Always increment the round, even if the received round is lower
-                    // This ensures the round always moves forward
-                    this.gameRound = Math.max(this.gameRound + 1, gameRound);
+                    // Always increment the round, ensuring it moves forward
+                    this.gameRound = gameRound;
         
                     console.log('Updated game round:', {
                         finalRound: this.gameRound
@@ -81,15 +80,12 @@ class WordGuesserGame {
 
                     this.updateGameRoundDisplay();
 
-                    // Broadcast round update back to parent if needed
+                    // Broadcast round update back to parent
                     window.parent?.postMessage({
                         type: 'updateGameRound',
                         data: { 
                             gameRound: this.gameRound,
-                            debug: {
-                                originalRound: gameRound,
-                                messageType: message.type
-                            }
+                            debug: 'Round update processed'
                         }
                     }, '*');
 
