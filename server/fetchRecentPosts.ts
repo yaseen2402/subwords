@@ -68,13 +68,13 @@ export async function useGemini(context: TriggerContext, prompt: string) {
     
     const words = generatedText
       .split(/[,\s]+/)
-      .map(word => word.trim().toUpperCase())
-      .filter(word => 
-        word.length >= 2 && 
-        word.length <= 10 && 
-        /^[A-Z]+$/.test(word)
-      )
-      .slice(0, 10);
+      // .map(word => word.trim().toUpperCase())
+      // .filter(word => 
+      //   word.length >= 2 && 
+      //   word.length <= 10 && 
+      //   /^[A-Z]+$/.test(word)
+      // )
+      // .slice(0, 10);
 
     console.log('Generated Words:', words);
     return words.length > 0 ? words : [
@@ -157,7 +157,7 @@ export async function generateConnectorWords(context: TriggerContext | Context, 
   `;
 
   const connectorWords = await useGemini(context, prompt);
-  
+  console.log(connectorWords);  
   // Predefined list of valid connectors
   const validConnectors = [
     'IS', 'ARE', 'WAS', 'WERE', 'THE', 'A', 'AN', 
