@@ -182,6 +182,18 @@ Devvit.addSchedulerJob({
           userCount: 0
         }));
 
+        // Ensure we have at least some words to continue the game
+        if (newCells.length === 0) {
+          console.error('No new cells generated! Falling back to default words.');
+          newCells = [
+            { word: 'CONTINUE', userCount: 0 },
+            { word: 'STORY', userCount: 0 },
+            { word: 'GAME', userCount: 0 },
+            { word: 'PLAY', userCount: 0 },
+            { word: 'MORE', userCount: 0 }
+          ];
+        }
+
         // COMPLETELY replace existing cells in Redis
         await context.redis.set(`subwords_${postId}`, 
           newCells.map(cell => cell.word).join(',')
@@ -195,12 +207,26 @@ Devvit.addSchedulerJob({
 
         // Broadcast cell update with new words
         try {
+          console.log('Broadcasting new cells:', {
+            cellCount: newCells.length,
+            words: newCells.map(cell => cell.word)
+          });
+
           await context.realtime.send('game_updates', {
             type: 'updateCells',
             cells: newCells
           });
         } catch (error) {
-          console.error('Failed to broadcast cell update', error);
+          console.error('Failed to broadcast cell update', {
+            error: error,
+            newCellsCount: newCells.length,
+            newCellsWords: newCells.map(cell => cell.word)
+          });
+
+          // Fallback: Use Redis to store cell update
+          await context.redis.set(`subwords_${postId}_backup_cells`, 
+            JSON.stringify(newCells)
+          );
         }
 
         // Broadcast story update with more context
