@@ -34,8 +34,8 @@ class WordGuesserGame {
             console.log('going inside the nested message', message.data);
           
             if (message.type === 'initialData') {
-                const {username, currentCells, story} = message.data;
-                console.log('Initial data:', {username, currentCells, story});
+                const {username, currentCells, story, gameRound} = message.data;
+                console.log('Initial data:', {username, currentCells, story, gameRound});
                 this.username = username;
                 this.currentCells = currentCells || []; 
                 
@@ -48,8 +48,10 @@ class WordGuesserGame {
                 
                 this.updateGridFromGameState();
                 
-                // Update story
+                // Update story and game round
                 this.storyElement.innerText = story || '';
+                this.gameRound = gameRound || 1;
+                this.updateGameRoundDisplay();
             } 
             if (message.type === 'updateGameCells') {
                 console.log("reached inside updateGameCells if statement")

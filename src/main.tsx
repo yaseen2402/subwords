@@ -440,13 +440,18 @@ Devvit.addCustomPostType({
       try {
         const titles = await fetchRecentPostTitles(context);
         const generatedWords = await generateWordsFromTitles(context, titles);
-        
+      
         // Take first 10 words
         const initialWords = generatedWords.slice(0, 10);
-        
+      
         // Store remaining words in Redis for future use
         await context.redis.set(`subwords_${context.postId}_all_words`, generatedWords.slice(10).join(','));
         await context.redis.set(`subwords_${context.postId}_total_words`, generatedWords.join(','));
+
+        // Increment game round when generating new words
+        const gameRoundKey = `subwords_${context.postId}_game_round`;
+        const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
+        await context.redis.set(gameRoundKey, (currentRound + 1).toString());
 
         const cellsWithCounts: WordData[] = initialWords
           .filter((word: string | undefined): word is string => 
