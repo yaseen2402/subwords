@@ -206,7 +206,7 @@ Devvit.addSchedulerJob({
           await context.realtime.send('updateStory', {
             type: 'storyUpdate',
             word: mostVotedWord,
-            story: updatedStory
+            story: expandedStory
           });
           console.log('Story update broadcasted');
         } catch (realtimeError) {
@@ -214,14 +214,14 @@ Devvit.addSchedulerJob({
             error: realtimeError,
             message: {
               word: mostVotedWord,
-              story: updatedStory
+              story: expandedStory
             }
           });
 
           // Fallback: Use Redis as a backup communication method
           await context.redis.set(`subwords_${postId}_last_story_update`, JSON.stringify({
             word: mostVotedWord,
-            story: updatedStory,
+            story: expandedStory,
             timestamp: new Date().toISOString()
           }));
         }
