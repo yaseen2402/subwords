@@ -191,7 +191,6 @@ Devvit.addSchedulerJob({
           // Store game round update in Redis for webview to read
           await context.redis.set(`subwords_${postId}_latest_round_update`, JSON.stringify({
             gameRound: newRound,
-            timestamp: Date.now()
           }));
         } catch (error) {
           console.error('Failed to broadcast game round update', {

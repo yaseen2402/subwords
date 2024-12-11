@@ -53,7 +53,15 @@ class WordGuesserGame {
                 this.gameRound = gameRound || 1;
                 this.updateGameRoundDisplay();
             } 
-            if (message.type === 'updateGameCells' || message.type === 'updateGameRound') {
+            if(message.type === 'updateGameRound'){
+                console.log("received game round message in webview");
+                if (event.data.gameRound !== undefined) {
+                  this.gameRound = event.data.gameRound;
+                  this.updateGameRoundDisplay();
+                }
+            }
+            
+            if (message.type === 'updateGameCells') {
                 console.log("Received game update:", message);
                 // Parse the stringified data
                 const {currentCells, gameRound} = message.data || {};
