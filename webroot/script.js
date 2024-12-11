@@ -294,10 +294,6 @@ class WordGuesserGame {
             data: { word }
           }, '*');
         });
-
-        // Increment game round when new cells are added
-        this.gameRound++;
-        this.updateGameRoundDisplay();
         
         // Start 30-second timer after confirm
         let lastSelectedTime = Date.now();
