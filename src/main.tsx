@@ -24,6 +24,7 @@ type WebViewMessage =
         username: string; 
         currentCells: WordData[];
         story: string;
+        gameRound?: number;
       };
     }
   | {
@@ -33,6 +34,10 @@ type WebViewMessage =
   | {
       type: 'updateGameCells';
       data: { currentCells: string[] };
+    }
+  | {
+      type: 'updateGameRound';
+      data: { gameRound: number };
     }
   | {
       type: 'saveStory';
