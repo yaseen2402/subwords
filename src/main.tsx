@@ -240,6 +240,10 @@ Devvit.addSchedulerJob({
             postId: postId
           });
 
+          // Get the current game round from Redis
+          const gameRoundKey = `subwords_${postId}_game_round`;
+          const currentRound = parseInt(await context.redis.get(gameRoundKey) || '0');
+
           await context.realtime.send('game_updates', {
             type: 'updateCells',
             cells: newCells,
