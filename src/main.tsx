@@ -252,6 +252,7 @@ Devvit.addSchedulerJob({
             postId: postId,
             gameRound: currentRound  // Add game round to broadcast
           });
+          console.log('Broadcasting game round:', currentRound);
         } catch (error) {
           console.error('Failed to broadcast cell update', {
             error: error instanceof Error ? error.message : error,

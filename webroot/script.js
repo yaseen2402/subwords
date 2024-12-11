@@ -56,7 +56,7 @@ class WordGuesserGame {
                 const {currentCells, gameRound} = message.data;
                 console.log('Update game cells:', currentCells);
                 this.currentCells = currentCells || [];
-                this.gameRound = gameRound || this.gameRound;
+                this.gameRound = gameRound !== undefined ? gameRound : this.gameRound + 1;
                 this.updateGridFromGameState();
                 this.updateGameRoundDisplay();
             }
@@ -189,6 +189,7 @@ class WordGuesserGame {
       gameRoundEl.classList.add('game-round');
       document.getElementById('game-container').prepend(gameRoundEl);
     }
+    console.log('Updating game round display:', this.gameRound);
     gameRoundEl.textContent = `Round: ${this.gameRound}`;
   }
 
