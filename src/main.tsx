@@ -179,10 +179,21 @@ Devvit.addSchedulerJob({
             postId: postId
           });
 
+          // Update Redis with new round
+          await context.redis.set(gameRoundKey, newRound.toString());
+
           await context.realtime.send('game_updates', {
             type: 'updateGameRound',
             gameRound: newRound,
             postId: postId
+          });
+
+          // Also send to the webview directly
+          context.ui.webView.postMessage('myWebView', {
+            type: 'updateGameRound',
+            data: { 
+              gameRound: newRound 
+            }
           });
         } catch (error) {
           console.error('Failed to broadcast game round update', {
@@ -440,13 +451,11 @@ Devvit.addCustomPostType({
       
       // Retrieve current game round, with more robust initialization
       const gameRoundKey = `subwords_${context.postId}_game_round`;
-      let currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
       
-      // Ensure the round is at least 1
-      currentRound = Math.max(1, currentRound);
+      // Always initialize game round to 1 if not set
+      await context.redis.set(gameRoundKey, '1');
       
-      // Always set the initial round to 1 if not set or invalid
-      await context.redis.set(gameRoundKey, currentRound.toString());
+      const currentRound = 1;
       
       console.log('Initialized Game Round:', {
         gameRoundKey: gameRoundKey,
@@ -503,6 +512,8 @@ Devvit.addCustomPostType({
         await context.redis.set(`subwords_${context.postId}_total_words`, generatedWords.join(','));
 
         // Increment game round when generating new words
+        const gameRoundKey = `subwords_${context.postId}_game_round`;
+        await context.redis.set(gameRoundKey, '1');
         
 
         const cellsWithCounts: WordData[] = initialWords
@@ -602,6 +613,10 @@ Devvit.addCustomPostType({
           await context.redis.del(`subwords_${context.postId}_all_words`);
           await context.redis.del(`subwords_${context.postId}_story`);
           await context.redis.del(`subwords_${context.postId}_game_status`);
+          
+          // Reset game round to 1
+          const gameRoundKey = `subwords_${context.postId}_game_round`;
+          await context.redis.set(gameRoundKey, '1');
 
           // Regenerate words
           const titles = await fetchRecentPostTitles(context);
