@@ -55,7 +55,9 @@ class WordGuesserGame {
             } 
             if (message.type === 'updateGameCells' || message.type === 'updateGameRound') {
                 console.log("Received game update:", message);
-                const {currentCells, gameRound} = message.data || {};
+                // Parse the stringified data
+                const parsedMessage = typeof message === 'string' ? JSON.parse(message) : message;
+                const {currentCells, gameRound} = parsedMessage.data || {};
         
                 if (currentCells) {
                     console.log('Update game cells:', currentCells);
