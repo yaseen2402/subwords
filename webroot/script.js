@@ -234,6 +234,15 @@ class WordGuesserGame {
     }
     console.log('Updating game round display:', this.gameRound);
     gameRoundEl.textContent = `Round: ${this.gameRound}`;
+    
+    // Broadcast round update to ensure consistency
+    window.parent?.postMessage({
+      type: 'updateGameRound',
+      data: { 
+        gameRound: this.gameRound,
+        debug: 'Manual update triggered'
+      }
+    }, '*');
   }
 
   showGameOverScreen() {
