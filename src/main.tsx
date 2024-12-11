@@ -10,7 +10,7 @@ import {
 
 const MAX_JOBS = 10;
 const JOB_LIST_KEY = 'active_job_list';
-const MAX_STORY_WORDS = 8;  // Maximum number of words in the story before game ends
+const MAX_STORY_WORDS = 15;  // Maximum number of words in the story before game ends
 
 type WordData = {
   word: string;
@@ -481,7 +481,7 @@ Devvit.addCustomPostType({
     const mySession = sessionId();
 
     const channel2 = useChannel({
-      name: 'updateStory',
+      name: `updateStory`,
       onMessage: (data) => {
         // Update local state if needed
         context.ui.webView.postMessage('myWebView', {
@@ -494,7 +494,7 @@ Devvit.addCustomPostType({
     channel2.subscribe();
     
     const channel = useChannel({
-      name: 'game_updates',
+      name: `game_updates`,
       onMessage: (message: any) => {
         console.log('Channel received message:', message);
         
