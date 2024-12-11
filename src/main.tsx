@@ -152,7 +152,20 @@ Devvit.addSchedulerJob({
 
         const gameRoundKey = `subwords_${context.postId}_game_round`;
         const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
-        await context.redis.set(gameRoundKey, (currentRound + 1).toString());
+        const newRound = currentRound + 1;
+        await context.redis.set(gameRoundKey, newRound.toString());
+
+        // Broadcast game round update in realtime
+        try {
+          await context.realtime.send('game_updates', {
+            type: 'updateGameCells',
+            data: {
+              gameRound: newRound
+            }
+          });
+        } catch (error) {
+          console.error('Failed to broadcast game round update', error);
+        }
 
         // Check story length and game status
         const st = initialStory.split(' ');
