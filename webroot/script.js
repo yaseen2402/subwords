@@ -69,6 +69,12 @@ class WordGuesserGame {
                     // Ensure round is always incremented, even if message doesn't match exactly
                     this.gameRound = Math.max(this.gameRound, gameRound);
                     this.updateGameRoundDisplay();
+        
+                    // Optional: Broadcast round update back to parent if needed
+                    window.parent?.postMessage({
+                      type: 'updateGameRound',
+                      data: { gameRound: this.gameRound }
+                    }, '*');
                 }
             }
 

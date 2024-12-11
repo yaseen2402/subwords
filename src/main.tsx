@@ -168,7 +168,10 @@ Devvit.addSchedulerJob({
         try {
           await context.realtime.send('game_updates', {
             type: 'updateGameRound',
-            gameRound: newRound,
+            data: {
+              gameRound: newRound,
+              postId: context.postId
+            }
           });
         } catch (error) {
           console.error('Failed to broadcast game round update', error);
