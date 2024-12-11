@@ -188,13 +188,11 @@ Devvit.addSchedulerJob({
             postId: postId
           });
 
-          // Also send to the webview directly
-          context.ui.webView.postMessage('myWebView', {
-            type: 'updateGameRound',
-            data: { 
-              gameRound: newRound 
-            }
-          });
+          // Store game round update in Redis for webview to read
+          await context.redis.set(`subwords_${postId}_latest_round_update`, JSON.stringify({
+            gameRound: newRound,
+            timestamp: Date.now()
+          }));
         } catch (error) {
           console.error('Failed to broadcast game round update', {
             error: error instanceof Error ? error.message : error,
