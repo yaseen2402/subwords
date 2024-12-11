@@ -124,12 +124,12 @@ Devvit.addSchedulerJob({
 
       if (mostVotedWord) {
         const currentStory = await context.redis.get(`subwords_${postId}_story`) || '';
-        const updatedStory = `${currentStory} ${mostVotedWord}`.trim();
+        const initialStory = `${currentStory} ${mostVotedWord}`.trim();
           
         console.log('Current story:', currentStory);
-        console.log('Updated story:', updatedStory);
+        console.log('Updated story:', initialStory);
           
-        await context.redis.set(`subwords_${postId}_story`, updatedStory);
+        await context.redis.set(`subwords_${postId}_story`, initialStory);
           
         // Reset votes for the used word
         await context.redis.set(`subwords_${postId}_${mostVotedWord}_votes`, '0');
@@ -139,14 +139,14 @@ Devvit.addSchedulerJob({
         const currentCells = currentCellsStr.split(',').filter(word => word !== mostVotedWord);
 
         // Check story length and game status
-        const st = updatedStory.split(' ');
+        const st = initialStory.split(' ');
         if (st.length >= MAX_STORY_WORDS) {
           await context.redis.set(`subwords_${postId}_game_status`, 'GAME_OVER');
           
           try {
             await context.realtime.send('game_updates', {
               type: 'gameOver',
-              story: updatedStory
+              story: initialStory
             });
           } catch (error) {
             console.error('Failed to broadcast game over', error);
@@ -155,18 +155,18 @@ Devvit.addSchedulerJob({
         }
 
         // Generate connectors for the most voted word
-        const mostVotedWord = mostVotedWord.toUpperCase();
-        const connectorWords = await generateConnectorWords(context, mostVotedWord);
+        const upperMostVotedWord = mostVotedWord.toUpperCase();
+        const connectorWords = await generateConnectorWords(context, upperMostVotedWord);
         
         // Append connectors to the most voted word
-        const expandedWord = `${mostVotedWord} ${connectorWords.join(' ')}`.trim();
+        const expandedWord = `${upperMostVotedWord} ${connectorWords.join(' ')}`.trim();
         
         // Update story with expanded word
-        const updatedStory = `${currentStory} ${expandedWord}`.trim();
-        await context.redis.set(`subwords_${postId}_story`, updatedStory);
+        const expandedStory = `${currentStory} ${expandedWord}`.trim();
+        await context.redis.set(`subwords_${postId}_story`, expandedStory);
 
         // Generate follow-up words based on the expanded story context
-        const newFollowUpWords = await generateFollowUpWords(context, updatedStory);
+        const newFollowUpWords = await generateFollowUpWords(context, expandedStory);
         
         // Filter out words already used in the story
         const usedWords = updatedStory.split(' ');
