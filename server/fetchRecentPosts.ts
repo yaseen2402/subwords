@@ -143,25 +143,42 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
 
 export async function generateConnectorWords(context: TriggerContext | Context, lastWord: string): Promise<string[]> {
   const prompt = `
-    Given the last word "${lastWord}", generate 1-3 connector words.
-    These should be articles, prepositions, conjunctions, or helping verbs.
+    Given the last word "${lastWord}", generate 1-3 diverse connector words.
+    Focus on creating natural, grammatically interesting transitions.
+    
+    CONNECTOR TYPES TO CONSIDER:
+    - Helping verbs that add nuance
+    - Prepositions that create spatial or temporal context
+    - Conjunctions that suggest causality or contrast
+    - Articles that refine the narrative focus
     
     STRICT RULES:
     - NO numbers
     - NO punctuation
     - NO list markers
     - Words must be UPPERCASE
-    - Prefer natural, grammatically correct connectors
-    - Aim to create a smooth transition in the story
-    - If no suitable connectors are found, return an empty array
+    - Prioritize variety and narrative flow
+    - Avoid repetitive or generic connectors
+    - Aim to add depth to the story's progression
   `;
 
   const connectorWords = await useGemini(context, prompt);
   console.log(connectorWords);  
   // Predefined list of valid connectors
   const validConnectors = [
-    'IS', 'ARE', 'WAS', 'WERE', 'THE', 'A', 'AN', 
-    'OF', 'WITH', 'AND', 'IN', 'TO', 'FOR', 'BY'
+    // Helping Verbs
+    'IS', 'ARE', 'WAS', 'WERE', 'CAN', 'COULD', 'WILL', 'WOULD', 
+    'SHALL', 'SHOULD', 'MAY', 'MIGHT', 'MUST', 'HAVE', 'HAS', 'HAD',
+    
+    // Articles
+    'THE', 'A', 'AN', 
+
+    // Prepositions
+    'OF', 'WITH', 'IN', 'ON', 'AT', 'TO', 'FOR', 'BY', 'FROM', 
+    'UNDER', 'OVER', 'THROUGH', 'ACROSS', 'BETWEEN', 'AMONG',
+    
+    // Conjunctions
+    'AND', 'BUT', 'OR', 'YET', 'SO', 'BECAUSE', 'WHILE', 'SINCE'
   ];
 
   // Filter and validate connector words
