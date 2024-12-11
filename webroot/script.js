@@ -35,7 +35,7 @@ class WordGuesserGame {
           
             if (message.type === 'initialData') {
                 const {username, currentCells, story, } = message.data;
-                console.log('Initial data:', {username, currentCells, story, gameRound});
+                console.log('Initial data:', {username, currentCells, story});
                 this.username = username;
                 this.currentCells = currentCells || []; 
                 
