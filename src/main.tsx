@@ -4,7 +4,8 @@ import { Devvit, useState, useChannel} from '@devvit/public-api';
 import { 
   fetchRecentPostTitles, 
   generateWordsFromTitles, 
-  generateFollowUpWords 
+  generateFollowUpWords,
+  generateConnectorWords
 } from '../server/fetchRecentPosts.js';
 
 const MAX_JOBS = 10;
