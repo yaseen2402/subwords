@@ -177,7 +177,7 @@ Devvit.addSchedulerJob({
         );
 
         // Create new cells, replacing ALL existing cells
-        const newCells = availableNewWords.slice(0, 10).map(word => ({
+        let newCells = availableNewWords.slice(0, 10).map(word => ({
           word,
           userCount: 0
         }));
