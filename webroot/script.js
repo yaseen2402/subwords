@@ -127,10 +127,10 @@ class WordGuesserGame {
             this.currentCells = [{ word: 'GAME OVER', userCount: 0 }];
             this.updateGridFromGameState();
             break;
-          case 'gameRoundUpdate':
-            console.log('Received game round update via channel:', event.data);
+          case 'updateGameRound':
+            console.log('Received game round update:', event.data);
             if (event.data.gameRound !== undefined) {
-              this.gameRound = Math.max(this.gameRound, event.data.gameRound);
+              this.gameRound = event.data.gameRound;
               this.updateGameRoundDisplay();
             }
             break;
