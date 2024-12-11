@@ -73,14 +73,8 @@ Devvit.addSchedulerJob({
   name: 'CheckMostVotedWord',
   onRun: async (event, context) => {
     // Track game round number
-    const gameRoundKey = `subwords_${event.data?.postId}_game_round`;
-    const currentRound = parseInt(await context.redis.get(gameRoundKey) || '0') + 1;
-    await context.redis.set(gameRoundKey, currentRound.toString());
-
-    console.log('Game Round:', {
-      postId: event.data?.postId,
-      round: currentRound
-    });
+    // Round incrementation now handled by story updates
+    console.log('Checking most voted word');
     // console.log('VotedWordCheck job started', {
     //   postId: event.data?.postId || 'No postId',
     //   timestamp: new Date().toISOString(),
