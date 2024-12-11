@@ -34,7 +34,7 @@ class WordGuesserGame {
             console.log('going inside the nested message', message.data);
           
             if (message.type === 'initialData') {
-                const {username, currentCells, story, gameRound} = message.data;
+                const {username, currentCells, story, } = message.data;
                 console.log('Initial data:', {username, currentCells, story, gameRound});
                 this.username = username;
                 this.currentCells = currentCells || []; 
