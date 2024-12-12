@@ -220,12 +220,27 @@ class WordGuesserGame {
             cell.style.backgroundColor = color;
             cell.dataset.userCount = userCount.toString();
             
-            const playerCountEl = cell.querySelector('.cell-players');
-            if (playerCountEl) {
-                playerCountEl.textContent = userCount > 0 ? `+${userCount}` : '';
-            }
+            const playerCountEl = cell.querySelector('.cell-players') || document.createElement('div');
+            playerCountEl.classList.add('cell-players');
+            playerCountEl.textContent = userCount > 0 ? `+${userCount}` : '';
+            cell.appendChild(playerCountEl);
         }
     });
+  }
+
+  // Synchronize countdown timer across all clients
+  syncCountdownTimer(seconds) {
+    // Broadcast timer start to all clients
+    window.parent?.postMessage({
+      type: 'syncTimer',
+      data: {
+        seconds: seconds,
+        timestamp: Date.now()
+      }
+    }, '*');
+
+    // Start local timer
+    this.startCountdownTimer(seconds);
   }
 
   showStoryCompletedScreen() {
