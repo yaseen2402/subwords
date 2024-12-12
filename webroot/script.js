@@ -168,6 +168,17 @@ class WordGuesserGame {
   updateGridFromGameState() {
     console.log('Updating grid with cells:', JSON.stringify(this.currentCells));
     
+    // Check for game over state
+    const gameOverCell = this.currentCells.find(cell => 
+      (typeof cell === 'string' && cell === 'GAME OVER') || 
+      (cell.word === 'GAME OVER')
+    );
+
+    if (gameOverCell) {
+      this.showGameOverScreen();
+      return;
+    }
+    
     // Clear existing grid
     this.gridContainer.innerHTML = '';
     
@@ -175,12 +186,6 @@ class WordGuesserGame {
     this.words = this.currentCells.map(cell => 
       typeof cell === 'string' ? cell : cell.word
     );
-    
-    // Check for game over
-    if (this.words.length === 1 && this.words[0] === 'GAME OVER') {
-      this.showGameOverScreen();
-      return;
-    }
     
     // Check for story completion
     if (this.words.includes('END STORY')) {
@@ -336,9 +341,8 @@ class WordGuesserGame {
     gameOverOverlay.innerHTML = `
       <div class="game-over-content">
         <h1>Game Over</h1>
-        <p>Final Round: ${this.gameRound}</p>
-        <p>Final Story: ${this.storyElement.innerText}</p>
-        <button id="restart-game">Play Again</button>
+        <p>Final Story: A Collaborative Journey</p>
+        <div class="final-story-text">${this.storyElement.innerText}</div>
       </div>
     `;
     
@@ -348,22 +352,17 @@ class WordGuesserGame {
     gameOverOverlay.style.left = '0';
     gameOverOverlay.style.width = '100%';
     gameOverOverlay.style.height = '100%';
-    gameOverOverlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    gameOverOverlay.style.backgroundColor = 'rgba(0,0,0,0.9)';
     gameOverOverlay.style.display = 'flex';
     gameOverOverlay.style.justifyContent = 'center';
     gameOverOverlay.style.alignItems = 'center';
     gameOverOverlay.style.zIndex = '1000';
+    gameOverOverlay.style.color = 'white';
+    gameOverOverlay.style.padding = '20px';
+    gameOverOverlay.style.textAlign = 'center';
     
     // Add to body
     document.body.appendChild(gameOverOverlay);
-    
-    // Add restart game listener
-    document.getElementById('restart-game').addEventListener('click', () => {
-      // Notify parent to restart the game
-      window.parent?.postMessage({
-        type: 'restartGame'
-      }, '*');
-    });
   }
 
 
