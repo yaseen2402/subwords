@@ -735,19 +735,23 @@ Devvit.addCustomPostType({
       }
     };
 
-    const onStartGame = () => {
+    const onStartGame = async () => {
         console.log('Starting game, subscribing to channel');
         setWebviewVisible(true);
         channel.subscribe();
         console.log('Channel subscribed');
+
+        // Retrieve game round from Redis, default to 1 if not set
+        const gameRoundKey = `subwords_${context.postId}_game_round`;
+        const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
+
         context.ui.webView.postMessage('myWebView', {
           type: 'initialData',
           data: {
             username: username,
             currentCells: cells,
             story: story,
-            gameRound: 
-
+            gameRound: currentRound
           }
         });
     };

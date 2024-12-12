@@ -38,7 +38,7 @@ class WordGuesserGame {
                 console.log('Initial data:', {username, currentCells, story});
                 this.username = username;
                 this.currentCells = currentCells || []; 
-                this.gameRound = 
+                this.gameRound = message.data.gameRound || 1;
                 
                 // Set words from currentCells before creating grid
                 this.words = this.currentCells.map(cell => cell.word);
