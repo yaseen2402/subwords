@@ -77,8 +77,6 @@ function sessionId(): string {
 Devvit.addSchedulerJob({
   name: 'CheckMostVotedWord',
   onRun: async (event, context) => {
-    // Track game round number
-    // Round incrementation now handled by story updates
     console.log('Checking most voted word');
     // console.log('VotedWordCheck job started', {
     //   postId: event.data?.postId || 'No postId',
@@ -153,16 +151,16 @@ Devvit.addSchedulerJob({
 
         // Remove the used word from current cells
         const currentCellsStr = await context.redis.get(`subwords_${postId}`) || '';
-        const currentCells = currentCellsStr.split(',').filter(word => word !== mostVotedWord);
 
-        const gameRoundKey = `subwords_${context.postId}_game_round`;
+        const gameRoundKey = `subwords_${postId}_game_round`;
         
         // Ensure game round is initialized to 1 if not set
         const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
         const newRound = currentRound + 1;
+        await context.redis.set(gameRoundKey, newRound.toString());
         
         // Always increment and save the round when a most voted word is processed
-        console.log('Attempting to update game round:', {
+        console.log('incremented game round in redis:', {
           currentRound: currentRound,
           newRound: newRound,
           gameRoundKey: gameRoundKey,
@@ -295,25 +293,24 @@ Devvit.addSchedulerJob({
             word: expandedWord,
             story: expandedStory,
             expandedWord: expandedWord,
-            gameRound: currentRound,
             timestamp: Date.now()
           };
 
           await Promise.all([
             context.realtime.send('updateStory', storyUpdatePayload),
-            context.realtime.send('game_updates', {
-              ...storyUpdatePayload,
-              type: 'gameRoundUpdate'
-            })
+            // context.realtime.send('game_updates', {
+            //   ...storyUpdatePayload,
+            //   type: 'gameRoundUpdate'
+            // })
           ]);
 
-          console.log('Story and round update broadcasted', storyUpdatePayload);
+          console.log('Story update broadcasted', storyUpdatePayload);
 
           // Store comprehensive update in Redis
-          await context.redis.set(`subwords_${postId}_story_round_updates`, JSON.stringify({
-            storyUpdate: storyUpdatePayload,
-            latestRound: currentRound
-          }));
+          // await context.redis.set(`subwords_${postId}_story`, JSON.stringify({
+          //   storyUpdate: storyUpdatePayload,
+          // }));
+
         } catch (realtimeError) {
           console.error('Failed to send realtime event', {
             error: realtimeError,
@@ -668,12 +665,12 @@ Devvit.addCustomPostType({
           );
 
           // Send game round update to webview
-          context.ui.webView.postMessage('myWebView', {
-            type: 'updateGameRound',
-            data: { 
-              gameRound: await context.redis.get(`subwords_${context.postId}_game_round`) || 1
-            }
-          });
+          // context.ui.webView.postMessage('myWebView', {
+          //   type: 'updateGameRound',
+          //   data: { 
+          //     gameRound: await context.redis.get(`subwords_${context.postId}_game_round`) || 1
+          //   }
+          // });
           
           // Update the state with the new cells
           setCells(updatedCellsWithCounts);
@@ -719,13 +716,13 @@ Devvit.addCustomPostType({
           });
           break;
 
-        case 'updateGameRound':
-          const currentGameRound = msg.data.gameRound;
-          await context.redis.set(`subwords_${context.postId}_game_round`, currentGameRound); 
+        // case 'updateGameRound':
+        //   const currentGameRound = msg.data.gameRound;
+        //   await context.redis.set(`subwords_${context.postId}_game_round`, currentGameRound); 
 
-          console.log("game round updated in redis, current game round is:", currentGameRound);
+        //   console.log("game round updated in redis, current game round is:", currentGameRound);
 
-          break;
+        //   break;
         case 'initialData':
         case 'updateGameCells':
           break;

@@ -34,11 +34,11 @@ class WordGuesserGame {
             console.log('going inside the nested message', message.data);
           
             if (message.type === 'initialData') {
-                const {username, currentCells, story, } = message.data;
-                console.log('Initial data:', {username, currentCells, story});
+                const {username, currentCells, story, gameRound } = message.data;
+                console.log('Initial data:', {username, currentCells, story, gameRound});
                 this.username = username;
                 this.currentCells = currentCells || []; 
-                this.gameRound = message.data.gameRound || 1;
+                this.gameRound = gameRound || 1;
                 
                 // Set words from currentCells before creating grid
                 this.words = this.currentCells.map(cell => cell.word);
@@ -51,7 +51,6 @@ class WordGuesserGame {
                 
                 // Update story and game round
                 this.storyElement.innerText = story || '';
-                this.gameRound = gameRound || 1;
                 this.updateGameRoundDisplay();
             } 
             
@@ -70,11 +69,11 @@ class WordGuesserGame {
             if (message.type === 'updateGameRound') {
               console.log("Received game round update:", message);
               // Parse the stringified data
-              const {gameRound} = message.data || {};
+              const {currentRound} = message.data || {};
       
-              if (gameRound) {
-                  console.log('Update game round', gameRound);
-                  this.gameRound = gameRound;
+              if (currentRound) {
+                  console.log('Update game round', currentRound);
+                  this.gameRound = currentRound;
                   this.updateGameRoundDisplay();
               }
           }
@@ -111,21 +110,12 @@ class WordGuesserGame {
             this.currentCells = [{ word: 'GAME OVER', userCount: 0 }];
             this.updateGridFromGameState();
             break;
-          case 'gameRoundUpdate':
+          case 'updateRound':
             console.log('Received game round update:', event.data);
-            if (event.data.gameRound !== undefined) {
-              this.gameRound = event.data.gameRound;
+              this.gameRound = event.data.round;
               this.updateGameRoundDisplay();
-              
-              // Broadcast round update back to parent
-              window.parent?.postMessage({
-                type: 'updateGameRound',
-                data: { 
-                  gameRound: this.gameRound,
-                  debug: 'Channel round update'
-                }
-              }, '*');
-            }
+
+            
             break;
         }
       }
