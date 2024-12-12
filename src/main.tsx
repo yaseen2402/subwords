@@ -784,7 +784,8 @@ Devvit.addCustomPostType({
             username: username,
             currentCells: cells,
             story: story,
-            gameRound: currentRound
+            gameRound: currentRound,
+            timeRemaining: 30  // Add time remaining
           }
         });
     };

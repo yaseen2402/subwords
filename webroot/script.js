@@ -19,6 +19,8 @@ class WordGuesserGame {
   // Initialize game
   initGame() {
     this.storyElement = document.getElementById("story");
+    this.countdownElement = document.getElementById("countdown-timer");
+    this.countdownInterval = null;
     
     // handling messages sent from devvit app 
     window.addEventListener('message', (event) => {
@@ -52,6 +54,9 @@ class WordGuesserGame {
                 // Update story and game round
                 this.storyElement.innerText = story || '';
                 this.updateGameRoundDisplay();
+                
+                // Start countdown timer
+                this.startCountdownTimer(30);
             } 
 
             if (message.type === 'storyCompleted') {
@@ -270,6 +275,32 @@ class WordGuesserGame {
     }
     console.log('Updating game round display:', this.gameRound);
     gameRoundEl.textContent = `Round: ${this.gameRound}`;
+  }
+
+  startCountdownTimer(seconds) {
+    // Clear any existing interval
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+
+    // Set initial time
+    this.countdownElement.textContent = seconds;
+
+    this.countdownInterval = setInterval(() => {
+      seconds--;
+      this.countdownElement.textContent = seconds;
+
+      // Change color as time gets low
+      if (seconds <= 10) {
+        this.countdownElement.style.color = '#ff0000'; // Red
+      }
+
+      if (seconds <= 0) {
+        clearInterval(this.countdownInterval);
+        this.countdownElement.textContent = '0';
+        this.countdownElement.style.color = '#ff0000'; // Ensure red
+      }
+    }, 1000);
   }
 
   showGameOverScreen() {
