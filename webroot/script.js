@@ -9,7 +9,7 @@ class WordGuesserGame {
       this.username = 'Guest';
       this.cellSelections = {};
       this.currentCells = []; 
-      this.gameRound = 1;  // Start game round at 1
+      this.gameRound = 1;  
 
       this.channel = new BroadcastChannel('game_updates');
 
@@ -38,6 +38,7 @@ class WordGuesserGame {
                 console.log('Initial data:', {username, currentCells, story});
                 this.username = username;
                 this.currentCells = currentCells || []; 
+                this.gameRound = 
                 
                 // Set words from currentCells before creating grid
                 this.words = this.currentCells.map(cell => cell.word);
@@ -53,57 +54,32 @@ class WordGuesserGame {
                 this.gameRound = gameRound || 1;
                 this.updateGameRoundDisplay();
             } 
-            if(message.type === 'updateGameRound'){
-                console.log("received game round message in webview");
-                if (event.data.gameRound !== undefined) {
-                  this.gameRound = event.data.gameRound;
-                  this.updateGameRoundDisplay();
-                }
-            }
             
             if (message.type === 'updateGameCells') {
-                console.log("Received game update:", message);
+                console.log("Received game cell update:", message);
                 // Parse the stringified data
-                const {currentCells, gameRound} = message.data || {};
+                const {currentCells} = message.data || {};
         
                 if (currentCells) {
                     console.log('Update game cells:', currentCells);
                     this.currentCells = currentCells || [];
                     this.updateGridFromGameState();
                 }
-        
-                if (gameRound !== undefined) {
-                    console.log('Received game round update:', {
-                        currentRound: this.gameRound,
-                        newRound: gameRound,
-                        messageType: message.type
-                    });
-
-                    // Always increment the round, ensuring it moves forward
-                    this.gameRound = gameRound;
-        
-                    console.log('Updated game round:', {
-                        finalRound: this.gameRound
-                    });
-
-                    this.updateGameRoundDisplay();
-
-                    // Broadcast round update back to parent
-                    window.parent?.postMessage({
-                        type: 'updateGameRound',
-                        data: { 
-                            gameRound: this.gameRound,
-                            debug: 'Round update processed'
-                        }
-                    }, '*');
-
-                    // Broadcast to the game updates channel
-                    this.channel.postMessage({
-                        type: 'gameRoundUpdate',
-                        gameRound: this.gameRound
-                    });
-                }
             }
+
+            if (message.type === 'updateGameRound') {
+              console.log("Received game round update:", message);
+              // Parse the stringified data
+              const {gameRound} = message.data || {};
+      
+              if (gameRound) {
+                  console.log('Update game round', gameRound);
+                  this.gameRound = gameRound;
+                  this.updateGameRoundDisplay();
+              }
+          }
+
+            
 
             if(message.type === 'updateTextField'){
               console.log("Received story update message", message.data);
@@ -251,15 +227,6 @@ class WordGuesserGame {
     }
     console.log('Updating game round display:', this.gameRound);
     gameRoundEl.textContent = `Round: ${this.gameRound}`;
-    
-    // Broadcast round update to ensure consistency
-    window.parent?.postMessage({
-      type: 'updateGameRound',
-      data: { 
-        gameRound: this.gameRound,
-        debug: 'Manual update triggered'
-      }
-    }, '*');
   }
 
   showGameOverScreen() {

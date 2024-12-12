@@ -24,7 +24,7 @@ type WebViewMessage =
         username: string; 
         currentCells: WordData[];
         story: string;
-        gameRound?: number;
+        gameRound: number;
       };
     }
   | {
@@ -169,43 +169,7 @@ Devvit.addSchedulerJob({
           postId: postId
         });
 
-        // Increment round ONLY when a most voted word is processed
-        if (mostVotedWord) {
-          await context.redis.set(gameRoundKey, newRound.toString());
-
-          // Prepare game round update payload
-          const gameRoundUpdate = {
-            type: 'gameRoundUpdate',
-            gameRound: newRound,
-            postId: postId,
-            timestamp: Date.now()
-          };
-
-          // Store comprehensive game round update in Redis
-          await context.redis.set(`subwords_${postId}_game_round_updates`, JSON.stringify({
-            updates: [gameRoundUpdate],
-            latestRound: newRound
-          }));
-
-          // Broadcast game round update in realtime
-          try {
-            console.log('Sending game round update via realtime', gameRoundUpdate);
-
-            // Send to multiple channels for redundancy
-            await Promise.all([
-              context.realtime.send('game_updates', gameRoundUpdate),
-              context.realtime.send('updateGameRound', gameRoundUpdate)
-            ]);
-
-            // Additional Redis backup for webview and other components
-            await context.redis.set(`subwords_${postId}_latest_round_update`, JSON.stringify(gameRoundUpdate));
-          } catch (error) {
-            console.error('Failed to broadcast game round update', {
-              error: error instanceof Error ? error.message : error,
-              gameRoundUpdate
-            });
-          }
-        }
+        
 
         // Check story length and game status
         const st = initialStory.split(' ');
@@ -262,16 +226,16 @@ Devvit.addSchedulerJob({
         }));
 
         // Ensure we have at least some words to continue the game
-        if (newCells.length === 0) {
-          console.error('No new cells generated! Falling back to default words.');
-          newCells = [
-            { word: 'CONTINUE', userCount: 0 },
-            { word: 'STORY', userCount: 0 },
-            { word: 'GAME', userCount: 0 },
-            { word: 'PLAY', userCount: 0 },
-            { word: 'MORE', userCount: 0 }
-          ] as WordData[];
-        }
+        // if (newCells.length === 0) {
+        //   console.error('No new cells generated! Falling back to default words.');
+        //   newCells = [
+        //     { word: 'CONTINUE', userCount: 0 },
+        //     { word: 'STORY', userCount: 0 },
+        //     { word: 'GAME', userCount: 0 },
+        //     { word: 'PLAY', userCount: 0 },
+        //     { word: 'MORE', userCount: 0 }
+        //   ] as WordData[];
+        // }
 
         console.log('New Cells Generated:', {
           cellCount: newCells.length,
@@ -304,6 +268,12 @@ Devvit.addSchedulerJob({
             cells: newCells,
             postId: postId,
           });
+
+          await context.realtime.send('game_updates', {
+            type: 'updateRound',
+            round: newRound,
+            postId: postId,
+          })
         } catch (error) {
           console.error('Failed to broadcast cell update', {
             error: error instanceof Error ? error.message : error,
@@ -318,10 +288,7 @@ Devvit.addSchedulerJob({
           );
         }
 
-        // Broadcast story update with more context and game round
         try {
-          const gameRoundKey = `subwords_${context.postId}_game_round`;
-          const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
 
           const storyUpdatePayload = {
             type: 'storyUpdate',
@@ -357,14 +324,6 @@ Devvit.addSchedulerJob({
             }
           });
 
-          // Fallback: Use Redis as a backup communication method
-          await context.redis.set(`subwords_${postId}_last_story_round_update`, JSON.stringify({
-            word: expandedWord,
-            story: expandedStory,
-            expandedWord: expandedWord,
-            gameRound: currentRound,
-            timestamp: new Date().toISOString()
-          }));
         }
       } else {
         console.log('No words with votes found');
@@ -533,9 +492,6 @@ Devvit.addCustomPostType({
         await context.redis.set(`subwords_${context.postId}_all_words`, generatedWords.slice(10).join(','));
         await context.redis.set(`subwords_${context.postId}_total_words`, generatedWords.join(','));
 
-        // Increment game round when generating new words
-        const gameRoundKey = `subwords_${context.postId}_game_round`;
-        await context.redis.set(gameRoundKey, '1');
         
 
         const cellsWithCounts: WordData[] = initialWords
@@ -571,6 +527,7 @@ Devvit.addCustomPostType({
       const redisStory = await context.redis.get(`subwords_${context.postId}_story`) || '';
       return redisStory;
     });
+
 
     // Set up periodic word voting check
   
@@ -609,6 +566,13 @@ Devvit.addCustomPostType({
           type: 'updateGameCells',
           data: {
             currentCells: message.cells,
+          }
+        });
+
+        context.ui.webView.postMessage('myWebView', {
+          type: 'updateGameRound',
+          data: {
+            currentRound: message.round,
           }
         });
         
@@ -665,6 +629,7 @@ Devvit.addCustomPostType({
               username: username,
               currentCells: cellsWithCounts,
               story: '',
+
             }
           });
           break;
@@ -701,18 +666,6 @@ Devvit.addCustomPostType({
               };
             })
           );
-
-          // Broadcast to all clients
-          await channel.send({
-            type: 'updateCells',
-            session: mySession,
-            cells: updatedCellsWithCounts
-          });
-
-          await channel.send({
-            type: 'updateGameRound',
-            gameRound: await context.redis.get(`subwords_${context.postId}_game_round`) || 1
-          });
 
           // Send game round update to webview
           context.ui.webView.postMessage('myWebView', {
@@ -765,6 +718,14 @@ Devvit.addCustomPostType({
             newVotes: newVoteCount
           });
           break;
+
+        case 'updateGameRound':
+          const currentGameRound = msg.data.gameRound;
+          await context.redis.set(`subwords_${context.postId}_game_round`, currentGameRound); 
+
+          console.log("game round updated in redis, current game round is:", currentGameRound);
+
+          break;
         case 'initialData':
         case 'updateGameCells':
           break;
@@ -785,6 +746,8 @@ Devvit.addCustomPostType({
             username: username,
             currentCells: cells,
             story: story,
+            gameRound: 
+
           }
         });
     };
