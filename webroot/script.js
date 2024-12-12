@@ -126,10 +126,8 @@ class WordGuesserGame {
             break;
           case 'updateRound':
             console.log('Received game round update:', event.data);
-              this.gameRound = event.data.round;
-              this.updateGameRoundDisplay();
-
-            
+            this.gameRound = event.data.round;
+            this.updateGameRoundDisplay();
             break;
         }
       }
@@ -225,6 +223,12 @@ class WordGuesserGame {
             playerCountEl.textContent = userCount > 0 ? `+${userCount}` : '';
             cell.appendChild(playerCountEl);
         }
+    });
+
+    // Broadcast updated grid state to other players
+    this.channel.postMessage({
+      type: 'updateCells',
+      cells: this.currentCells
     });
   }
 
