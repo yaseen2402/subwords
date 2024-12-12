@@ -11,7 +11,7 @@ import {
 const MAX_JOBS = 10;
 const JOB_LIST_KEY = 'active_job_list';
 const MAX_STORY_WORDS = 15;  // Maximum number of words in the story before game ends
-const MAX_ROUNDS = 5
+const MAX_ROUNDS = 3
 const FINAL_STORY_TITLE = "Final Story: A Collaborative Journey"
 
 type WordData = {
@@ -122,17 +122,12 @@ Devvit.addSchedulerJob({
       const mostVotedWord = Object.entries(wordVotes)
         .filter(([_, votes]) => votes > 0)
         .sort((a, b) => b[1] - a[1])[0]?.[0];
-      
+
       // console.log('Most voted word selection process:', {
       //   wordVotes: wordVotes,
-      //   mostVotedWord: mostVotedWord
+      //   mostVotedWord: mostVotedWord,
+      //   postId: event.data?.postId
       // });
-
-      console.log('Most voted word selection process:', {
-        wordVotes: wordVotes,
-        mostVotedWord: mostVotedWord,
-        postId: event.data?.postId
-      });
 
       if (mostVotedWord) {
         console.log('Detailed Word Processing:', {
@@ -170,7 +165,7 @@ Devvit.addSchedulerJob({
         });
 
         // Check if max rounds reached
-        if (newRound > MAX_ROUNDS) {
+        if (newRound >= MAX_ROUNDS) {
           console.log('Max rounds reached. Ending game.');
           
           // Prepare final story with title
@@ -199,7 +194,8 @@ Devvit.addSchedulerJob({
           try {
             await context.realtime.send('game_updates', {
               type: 'gameOver',
-              story: initialStory
+              story: initialStory,
+              postId: postId
             });
           } catch (error) {
             console.error('Failed to broadcast game over', error);
@@ -443,14 +439,22 @@ Devvit.addCustomPostType({
       const currUser = await context.reddit.getCurrentUser();
       return currUser?.username ?? 'anon';
     });
-
+    const currentStory = await context.redis.get(`subwords_${context.postId}_story`);
+    const gameStatus = await context.redis.get(`subwords_${context.postId}_game_status`);
+      if (gameStatus === 'GAME_OVER') {
+        try {
+          await context.realtime.send('game_updates', {
+            type: 'gameOver',
+            story: currentStory,
+            postId: context.postId
+          });
+        } catch (error) {
+          console.error('Failed to broadcast game over', error);
+        }
+      }
     // Initialize game state from Redis
     const [cells, setCells] = useState(async () => {
-      // Check game status first
-      const gameStatus = await context.redis.get(`subwords_${context.postId}_game_status`);
-      if (gameStatus === 'GAME_OVER') {
-        return [{ word: 'GAME OVER', userCount: 0 }];
-      }
+
 
       const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
       const allWordsStr = await context.redis.get(`subwords_${context.postId}_all_words`) || '';
@@ -606,6 +610,13 @@ Devvit.addCustomPostType({
           type: 'updateGameRound',
           data: {
             currentRound: message.round,
+          }
+        });
+
+        context.ui.webView.postMessage('myWebView', {
+          type: 'gameOver',
+          data: {
+            finalStory: message.story,
           }
         });
         
