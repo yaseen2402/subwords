@@ -682,10 +682,11 @@ Devvit.addCustomPostType({
           if (currentRound >= 3) {
             const endStoryVoteKey = `subwords_${context.postId}_END STORY_votes`;
             const endStoryVotes = parseInt(await context.redis.get(endStoryVoteKey) || '0');
-            const totalVotes = updatedCellsWithCounts.reduce((sum, cell) => {
+            const totalVotes = await updatedCellsWithCounts.reduce(async (sumPromise, cell) => {
+              const sum = await sumPromise;
               const voteKey = `subwords_${context.postId}_${cell.word}_votes`;
               return sum + parseInt(await context.redis.get(voteKey) || '0');
-            }, 0);
+            }, Promise.resolve(0));
 
             if (endStoryVotes > totalVotes / 2) {
               // Story ends, notify webview
