@@ -609,8 +609,8 @@ Devvit.addCustomPostType({
           await context.redis.del(`subwords_${context.postId}_game_status`);
           
           // Reset game round to 1
-          const gameRoundKey = `subwords_${context.postId}_game_round`;
-          await context.redis.set(gameRoundKey, '1');
+          // const gameRoundKey = `subwords_${context.postId}_game_round`;
+          // await context.redis.set(gameRoundKey, '1');
 
           // Regenerate words
           const titles = await fetchRecentPostTitles(context);
