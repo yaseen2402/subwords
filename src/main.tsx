@@ -169,36 +169,36 @@ Devvit.addSchedulerJob({
           postId: postId
         });
 
-        await context.redis.set(gameRoundKey, newRound.toString());
-
-        // Broadcast game round update in realtime
-        try {
-          console.log('Sending game round update via realtime', {
-            type: 'updateGameRound',
-            gameRound: newRound,
-            postId: postId
-          });
-
-          // Update Redis with new round
+        // Increment round ONLY when a most voted word is processed
+        if (mostVotedWord) {
           await context.redis.set(gameRoundKey, newRound.toString());
 
-          await context.realtime.send('game_updates', {
-            type: 'gameRoundUpdate',
-            gameRound: newRound,
-            postId: postId
-          });
+          // Broadcast game round update in realtime
+          try {
+            console.log('Sending game round update via realtime', {
+              type: 'updateGameRound',
+              gameRound: newRound,
+              postId: postId
+            });
 
-          // Store game round update in Redis for webview to read
-          await context.redis.set(`subwords_${postId}_latest_round_update`, JSON.stringify({
-            gameRound: newRound,
-          }));
-        } catch (error) {
-          console.error('Failed to broadcast game round update', {
-            error: error instanceof Error ? error.message : error,
-            currentRound: currentRound,
-            newRound: newRound,
-            gameRoundKey: gameRoundKey
-          });
+            await context.realtime.send('game_updates', {
+              type: 'gameRoundUpdate',
+              gameRound: newRound,
+              postId: postId
+            });
+
+            // Store game round update in Redis for webview to read
+            await context.redis.set(`subwords_${postId}_latest_round_update`, JSON.stringify({
+              gameRound: newRound,
+            }));
+          } catch (error) {
+            console.error('Failed to broadcast game round update', {
+              error: error instanceof Error ? error.message : error,
+              currentRound: currentRound,
+              newRound: newRound,
+              gameRoundKey: gameRoundKey
+            });
+          }
         }
 
         // Check story length and game status
@@ -448,13 +448,11 @@ Devvit.addCustomPostType({
       
       // Retrieve current game round, with more robust initialization
       const gameRoundKey = `subwords_${context.postId}_game_round`;
-      
-      // Always initialize game round to 1 if not set
-      await context.redis.set(gameRoundKey, '1');
-      
-      const currentRound = 1;
-      
-      console.log('Initialized Game Round:', {
+        
+      // Retrieve current round, default to 1 if not set
+      const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
+        
+      console.log('Current Game Round:', {
         gameRoundKey: gameRoundKey,
         currentRound: currentRound
       });
