@@ -684,8 +684,16 @@ Devvit.addCustomPostType({
 
           await channel.send({
             type: 'updateGameRound',
-            
-          })
+            gameRound: await context.redis.get(`subwords_${context.postId}_game_round`) || 1
+          });
+
+          // Send game round update to webview
+          context.ui.webView.postMessage('myWebView', {
+            type: 'updateGameRound',
+            data: { 
+              gameRound: await context.redis.get(`subwords_${context.postId}_game_round`) || 1
+            }
+          });
           
           // Update the state with the new cells
           setCells(updatedCellsWithCounts);
