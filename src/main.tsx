@@ -11,7 +11,8 @@ import {
 const MAX_JOBS = 10;
 const JOB_LIST_KEY = 'active_job_list';
 const MAX_STORY_WORDS = 15;  // Maximum number of words in the story before game ends
-const MAX_ROUNDS =  5
+const MAX_ROUNDS = 5
+const FINAL_STORY_TITLE = "Final Story: A Collaborative Journey"
 
 type WordData = {
   word: string;
@@ -168,7 +169,26 @@ Devvit.addSchedulerJob({
           postId: postId
         });
 
-        
+        // Check if max rounds reached
+        if (newRound > MAX_ROUNDS) {
+          console.log('Max rounds reached. Ending game.');
+          
+          // Prepare final story with title
+          const finalStory = `${FINAL_STORY_TITLE}\n\n${initialStory}`;
+          
+          await context.redis.set(`subwords_${postId}_story`, finalStory);
+          await context.redis.set(`subwords_${postId}_game_status`, 'GAME_OVER');
+          
+          try {
+            await context.realtime.send('game_updates', {
+              type: 'gameOver',
+              story: finalStory
+            });
+          } catch (error) {
+            console.error('Failed to broadcast game over', error);
+          }
+          return;
+        }
 
         // Check story length and game status
         const st = initialStory.split(' ');
@@ -608,10 +628,7 @@ Devvit.addCustomPostType({
           await context.redis.del(`subwords_${context.postId}_all_words`);
           await context.redis.del(`subwords_${context.postId}_story`);
           await context.redis.del(`subwords_${context.postId}_game_status`);
-          
-          // Reset game round to 1
-          // const gameRoundKey = `subwords_${context.postId}_game_round`;
-          // await context.redis.set(gameRoundKey, '1');
+          await context.redis.del(`subwords_${context.postId}_game_round`);
 
           // Regenerate words
           const titles = await fetchRecentPostTitles(context);
@@ -630,6 +647,7 @@ Devvit.addCustomPostType({
             }));
 
           await context.redis.set(`subwords_${context.postId}`, initialWords.join(','));
+          await context.redis.set(`subwords_${context.postId}_game_round`, '1');
 
           // Notify webview with new game state
           context.ui.webView.postMessage('myWebView', {
@@ -638,6 +656,7 @@ Devvit.addCustomPostType({
               username: username,
               currentCells: cellsWithCounts,
               story: '',
+              gameRound: 1,
               timeRemaining: 30  // Reset timer to 30 seconds
             }
           });

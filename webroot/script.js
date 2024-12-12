@@ -253,8 +253,8 @@ class WordGuesserGame {
     storyCompletedOverlay.id = 'story-completed-overlay';
     storyCompletedOverlay.innerHTML = `
       <div class="story-completed-content">
-        <h1>Story Completed!</h1>
-        <p id="final-story-text"></p>
+        <h1>Final Story: A Collaborative Journey</h1>
+        <div id="final-story-text" style="white-space: pre-wrap; text-align: left; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4; border-radius: 10px;"></div>
         <button id="restart-game">Play Again</button>
       </div>
     `;
@@ -274,8 +274,9 @@ class WordGuesserGame {
     // Add to body
     document.body.appendChild(storyCompletedOverlay);
     
-    // Set final story text
-    document.getElementById('final-story-text').textContent = this.storyElement.innerText;
+    // Set final story text with better formatting
+    const finalStoryText = this.storyElement.innerText;
+    document.getElementById('final-story-text').textContent = finalStoryText;
     
     // Add restart game listener
     document.getElementById('restart-game').addEventListener('click', () => {
