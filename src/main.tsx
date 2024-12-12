@@ -500,6 +500,17 @@ Devvit.addCustomPostType({
             userCount: 0
           }));
 
+        // Add "End Story" cell from round 3 onwards
+        const gameRoundKey = `subwords_${context.postId}_game_round`;
+        const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
+        
+        if (currentRound >= 3) {
+          cellsWithCounts.push({
+            word: 'END STORY',
+            userCount: 0
+          });
+        }
+
         // Store initial words in Redis
         await context.redis.set(`subwords_${context.postId}`, initialWords.join(','));
 
@@ -663,6 +674,29 @@ Devvit.addCustomPostType({
               };
             })
           );
+
+          // Check if "END STORY" cell exists and has majority votes
+          const gameRoundKey = `subwords_${context.postId}_game_round`;
+          const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
+          
+          if (currentRound >= 3) {
+            const endStoryVoteKey = `subwords_${context.postId}_END STORY_votes`;
+            const endStoryVotes = parseInt(await context.redis.get(endStoryVoteKey) || '0');
+            const totalVotes = updatedCellsWithCounts.reduce((sum, cell) => {
+              const voteKey = `subwords_${context.postId}_${cell.word}_votes`;
+              return sum + parseInt(await context.redis.get(voteKey) || '0');
+            }, 0);
+
+            if (endStoryVotes > totalVotes / 2) {
+              // Story ends, notify webview
+              context.ui.webView.postMessage('myWebView', {
+                type: 'storyCompleted',
+                data: {
+                  story: await context.redis.get(`subwords_${context.postId}_story`) || ''
+                }
+              });
+            }
+          }
 
           // Send game round update to webview
           // context.ui.webView.postMessage('myWebView', {

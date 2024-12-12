@@ -39,20 +39,26 @@ class WordGuesserGame {
                 this.username = username;
                 this.currentCells = currentCells || []; 
                 this.gameRound = gameRound || 1;
-                
+            
                 // Set words from currentCells before creating grid
                 this.words = this.currentCells.map(cell => cell.word);
-                
+            
                 // Create grid after setting words
                 this.createGrid();
                 this.addEventListeners();
-                
+            
                 this.updateGridFromGameState();
-                
+            
                 // Update story and game round
                 this.storyElement.innerText = story || '';
                 this.updateGameRoundDisplay();
             } 
+
+            if (message.type === 'storyCompleted') {
+                const { story } = message.data;
+                this.storyElement.innerText = story;
+                this.showStoryCompletedScreen();
+            }
             
             if (message.type === 'updateGameCells') {
                 console.log("Received game cell update:", message);
@@ -170,6 +176,12 @@ class WordGuesserGame {
       return;
     }
     
+    // Check for story completion
+    if (this.words.includes('END STORY')) {
+      this.showStoryCompletedScreen();
+      return;
+    }
+    
     this.createGrid();
     
     document.querySelectorAll(".cell").forEach(cell => {
@@ -187,7 +199,9 @@ class WordGuesserGame {
             
             let color;
             
-            if (userCount <= 2) {
+            if (word === 'END STORY') {
+                color = '#FF6347'; // Tomato red for End Story cell
+            } else if (userCount <= 2) {
                 color = '#90EE90'; // Light green
             } else if (userCount <= 5) {
                 color = '#32CD32'; // Medium green
@@ -203,6 +217,45 @@ class WordGuesserGame {
                 playerCountEl.textContent = userCount > 0 ? `+${userCount}` : '';
             }
         }
+    });
+  }
+
+  showStoryCompletedScreen() {
+    // Create a story completed overlay
+    const storyCompletedOverlay = document.createElement('div');
+    storyCompletedOverlay.id = 'story-completed-overlay';
+    storyCompletedOverlay.innerHTML = `
+      <div class="story-completed-content">
+        <h1>Story Completed!</h1>
+        <p id="final-story-text"></p>
+        <button id="restart-game">Play Again</button>
+      </div>
+    `;
+    
+    // Style the overlay
+    storyCompletedOverlay.style.position = 'fixed';
+    storyCompletedOverlay.style.top = '0';
+    storyCompletedOverlay.style.left = '0';
+    storyCompletedOverlay.style.width = '100%';
+    storyCompletedOverlay.style.height = '100%';
+    storyCompletedOverlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    storyCompletedOverlay.style.display = 'flex';
+    storyCompletedOverlay.style.justifyContent = 'center';
+    storyCompletedOverlay.style.alignItems = 'center';
+    storyCompletedOverlay.style.zIndex = '1000';
+    
+    // Add to body
+    document.body.appendChild(storyCompletedOverlay);
+    
+    // Set final story text
+    document.getElementById('final-story-text').textContent = this.storyElement.innerText;
+    
+    // Add restart game listener
+    document.getElementById('restart-game').addEventListener('click', () => {
+      // Notify parent to restart the game
+      window.parent?.postMessage({
+        type: 'restartGame'
+      }, '*');
     });
   }
 
