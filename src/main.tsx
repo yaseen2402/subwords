@@ -182,7 +182,8 @@ Devvit.addSchedulerJob({
           try {
             await context.realtime.send('game_updates', {
               type: 'gameOver',
-              story: finalStory
+              story: finalStory,
+              gameStatus: 'GAME_OVER'
             });
           } catch (error) {
             console.error('Failed to broadcast game over', error);
@@ -445,20 +446,23 @@ Devvit.addCustomPostType({
 
     // Initialize game state from Redis
     const [cells, setCells] = useState(async () => {
-      // First, check if words are already in Redis
+      // Check game status first
+      const gameStatus = await context.redis.get(`subwords_${context.postId}_game_status`);
+      if (gameStatus === 'GAME_OVER') {
+        return [{ word: 'GAME OVER', userCount: 0 }];
+      }
+
       const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
       const allWordsStr = await context.redis.get(`subwords_${context.postId}_all_words`) || '';
       const allWords = allWordsStr ? allWordsStr.split(',') : [];
       
-      // Retrieve current game round, with more robust initialization
       const gameRoundKey = `subwords_${context.postId}_game_round`;
-        
-      // Retrieve current round, default to 1 if not set
       const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
         
       console.log('Current Game Round:', {
         gameRoundKey: gameRoundKey,
-        currentRound: currentRound
+        currentRound: currentRound,
+        gameStatus: gameStatus
       });
 
       if (redisCells) {
