@@ -1,6 +1,6 @@
 import './createPost.js';
 
-import { Devvit, useState, useChannel} from '@devvit/public-api';
+import { Devvit, useState, useChannel, useAsync} from '@devvit/public-api';
 import { 
   fetchRecentPostTitles, 
   generateWordsFromTitles, 
@@ -439,19 +439,7 @@ Devvit.addCustomPostType({
       const currUser = await context.reddit.getCurrentUser();
       return currUser?.username ?? 'anon';
     });
-    const currentStory = await context.redis.get(`subwords_${context.postId}_story`);
-    const gameStatus = await context.redis.get(`subwords_${context.postId}_game_status`);
-      if (gameStatus === 'GAME_OVER') {
-        try {
-          await context.realtime.send('game_updates', {
-            type: 'gameOver',
-            story: currentStory,
-            postId: context.postId
-          });
-        } catch (error) {
-          console.error('Failed to broadcast game over', error);
-        }
-      }
+    
     // Initialize game state from Redis
     const [cells, setCells] = useState(async () => {
 
@@ -466,7 +454,6 @@ Devvit.addCustomPostType({
       console.log('Current Game Round:', {
         gameRoundKey: gameRoundKey,
         currentRound: currentRound,
-        gameStatus: gameStatus
       });
 
       if (redisCells) {
@@ -533,12 +520,12 @@ Devvit.addCustomPostType({
         const gameRoundKey = `subwords_${context.postId}_game_round`;
         const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
         
-        if (currentRound >= 3) {
-          cellsWithCounts.push({
-            word: 'END STORY',
-            userCount: 0
-          });
-        }
+        // if (currentRound >= 3) {
+        //   cellsWithCounts.push({
+        //     word: 'END STORY',
+        //     userCount: 0
+        //   });
+        // }
 
         // Store initial words in Redis
         await context.redis.set(`subwords_${context.postId}`, initialWords.join(','));
@@ -795,10 +782,30 @@ Devvit.addCustomPostType({
     };
 
     const onStartGame = async () => {
+
         console.log('Starting game, subscribing to channel');
         setWebviewVisible(true);
         channel.subscribe();
         console.log('Channel subscribed');
+        const finalStory = await context.redis.get(`subwords_${context.postId}_story`);
+        const gameStatus = await context.redis.get(`subwords_${context.postId}_game_status`);
+        if (gameStatus === 'GAME_OVER') {
+          try {
+            // await context.realtime.send('game_updates', {
+            //   type: 'gameOver',
+            //   story: finalStory || {},
+            // });
+
+            context.ui.webView.postMessage('myWebView', {
+              type: 'gameOver',
+              data: {
+                story: finalStory || {}
+              }
+            });
+          } catch (error) {
+            console.error('Failed to broadcast game over', error);
+          }
+        }
 
         // Retrieve game round from Redis, default to 1 if not set
         const gameRoundKey = `subwords_${context.postId}_game_round`;

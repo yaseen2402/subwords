@@ -92,6 +92,18 @@ class WordGuesserGame {
               }
           }
 
+          if(message.type === 'gameOver'){
+            console.log("received game over message from channel", message);
+
+            const {finalStory} = message.data || {};
+            
+            if (finalStory) {
+              console.log('Update game round', finalStory);
+              this.showStoryCompletedScreen();
+            }
+            
+          }
+
             
 
             if(message.type === 'updateTextField'){
@@ -121,8 +133,7 @@ class WordGuesserGame {
             break;
           case 'gameOver':
             console.log('Game over received:', event.data);
-            this.currentCells = [{ word: 'GAME OVER', userCount: 0 }];
-            this.updateGridFromGameState();
+            this.showStoryCompletedScreen();
             break;
           case 'updateRound':
             console.log('Received game round update:', event.data);
@@ -168,16 +179,16 @@ class WordGuesserGame {
   updateGridFromGameState() {
     console.log('Updating grid with cells:', JSON.stringify(this.currentCells));
     
-    // Check for game over state
-    const gameOverCell = this.currentCells.find(cell => 
-      (typeof cell === 'string' && cell === 'GAME OVER') || 
-      (cell.word === 'GAME OVER')
-    );
+    // // Check for game over state
+    // const gameOverCell = this.currentCells.find(cell => 
+    //   (typeof cell === 'string' && cell === 'GAME OVER') || 
+    //   (cell.word === 'GAME OVER')
+    // );
 
-    if (gameOverCell) {
-      this.showGameOverScreen();
-      return;
-    }
+    // if (gameOverCell) {
+    //   this.showGameOverScreen();
+    //   return;
+    // }
     
     // Clear existing grid
     this.gridContainer.innerHTML = '';
