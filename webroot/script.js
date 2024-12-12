@@ -86,6 +86,9 @@ class WordGuesserGame {
                   console.log('Update game round', currentRound);
                   this.gameRound = currentRound;
                   this.updateGameRoundDisplay();
+                  
+                  // Restart countdown timer for each new round
+                  this.startCountdownTimer(30);
               }
           }
 
@@ -277,11 +280,14 @@ class WordGuesserGame {
     gameRoundEl.textContent = `Round: ${this.gameRound}`;
   }
 
-  startCountdownTimer(seconds) {
+  startCountdownTimer(seconds = 30) {
     // Clear any existing interval
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
     }
+
+    // Reset timer color to default
+    this.countdownElement.style.color = '#ff4500';
 
     // Set initial time
     this.countdownElement.textContent = seconds;

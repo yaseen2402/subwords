@@ -638,7 +638,7 @@ Devvit.addCustomPostType({
               username: username,
               currentCells: cellsWithCounts,
               story: '',
-
+              timeRemaining: 30  // Reset timer to 30 seconds
             }
           });
           break;
