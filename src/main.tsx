@@ -752,13 +752,6 @@ Devvit.addCustomPostType({
           });
           break;
 
-        // case 'updateGameRound':
-        //   const currentGameRound = msg.data.gameRound;
-        //   await context.redis.set(`subwords_${context.postId}_game_round`, currentGameRound); 
-
-        //   console.log("game round updated in redis, current game round is:", currentGameRound);
-
-        //   break;
         case 'initialData':
         case 'updateGameCells':
           break;
