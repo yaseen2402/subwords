@@ -683,6 +683,11 @@ Devvit.addCustomPostType({
             session: mySession,
             cells: updatedCellsWithCounts
           });
+
+          await channel.send({
+            type: 'updateGameRound',
+            
+          })
           
           // Update the state with the new cells
           setCells(updatedCellsWithCounts);
