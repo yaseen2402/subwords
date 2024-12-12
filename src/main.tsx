@@ -173,30 +173,36 @@ Devvit.addSchedulerJob({
         if (mostVotedWord) {
           await context.redis.set(gameRoundKey, newRound.toString());
 
+          // Prepare game round update payload
+          const gameRoundUpdate = {
+            type: 'gameRoundUpdate',
+            gameRound: newRound,
+            postId: postId,
+            timestamp: Date.now()
+          };
+
+          // Store comprehensive game round update in Redis
+          await context.redis.set(`subwords_${postId}_game_round_updates`, JSON.stringify({
+            updates: [gameRoundUpdate],
+            latestRound: newRound
+          }));
+
           // Broadcast game round update in realtime
           try {
-            console.log('Sending game round update via realtime', {
-              type: 'updateGameRound',
-              gameRound: newRound,
-              postId: postId
-            });
+            console.log('Sending game round update via realtime', gameRoundUpdate);
 
-            await context.realtime.send('game_updates', {
-              type: 'gameRoundUpdate',
-              gameRound: newRound,
-              postId: postId
-            });
+            // Send to multiple channels for redundancy
+            await Promise.all([
+              context.realtime.send('game_updates', gameRoundUpdate),
+              context.realtime.send('updateGameRound', gameRoundUpdate)
+            ]);
 
-            // Store game round update in Redis for webview to read
-            await context.redis.set(`subwords_${postId}_latest_round_update`, JSON.stringify({
-              gameRound: newRound,
-            }));
+            // Additional Redis backup for webview and other components
+            await context.redis.set(`subwords_${postId}_latest_round_update`, JSON.stringify(gameRoundUpdate));
           } catch (error) {
             console.error('Failed to broadcast game round update', {
               error: error instanceof Error ? error.message : error,
-              currentRound: currentRound,
-              newRound: newRound,
-              gameRoundKey: gameRoundKey
+              gameRoundUpdate
             });
           }
         }
@@ -312,15 +318,35 @@ Devvit.addSchedulerJob({
           );
         }
 
-        // Broadcast story update with more context
+        // Broadcast story update with more context and game round
         try {
-          await context.realtime.send('updateStory', {
+          const gameRoundKey = `subwords_${context.postId}_game_round`;
+          const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
+
+          const storyUpdatePayload = {
             type: 'storyUpdate',
             word: expandedWord,
             story: expandedStory,
             expandedWord: expandedWord,
-          });
-          console.log('Story update broadcasted with full expanded word');
+            gameRound: currentRound,
+            timestamp: Date.now()
+          };
+
+          await Promise.all([
+            context.realtime.send('updateStory', storyUpdatePayload),
+            context.realtime.send('game_updates', {
+              ...storyUpdatePayload,
+              type: 'gameRoundUpdate'
+            })
+          ]);
+
+          console.log('Story and round update broadcasted', storyUpdatePayload);
+
+          // Store comprehensive update in Redis
+          await context.redis.set(`subwords_${postId}_story_round_updates`, JSON.stringify({
+            storyUpdate: storyUpdatePayload,
+            latestRound: currentRound
+          }));
         } catch (realtimeError) {
           console.error('Failed to send realtime event', {
             error: realtimeError,
@@ -332,10 +358,11 @@ Devvit.addSchedulerJob({
           });
 
           // Fallback: Use Redis as a backup communication method
-          await context.redis.set(`subwords_${postId}_last_story_update`, JSON.stringify({
+          await context.redis.set(`subwords_${postId}_last_story_round_update`, JSON.stringify({
             word: expandedWord,
             story: expandedStory,
             expandedWord: expandedWord,
+            gameRound: currentRound,
             timestamp: new Date().toISOString()
           }));
         }
