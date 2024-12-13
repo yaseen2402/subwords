@@ -84,7 +84,7 @@ Devvit.addSchedulerJob({
     //   timestamp: new Date().toISOString(),
     //   fullEventData: JSON.stringify(event)
     // });
-    
+    await context.redis.set(`subwords_${context.postId}_${context.reddit.getCurrentUser()}_canVote`, "true");
     if (!event.data?.postId) {
       console.error('No postId provided to CheckMostVotedWord job', {
         eventData: JSON.stringify(event),
@@ -601,6 +601,20 @@ Devvit.addCustomPostType({
     //receiving messages from webview
     const onMessage = async (msg: any) => {
       switch (msg.type) {
+        case 'btnTrigger':
+          const canVote = await context.redis.get(`subwords_${context.postId}_${username}_canVote`) || '';
+
+          context.ui.webView.postMessage('myWebView', {
+            type: 'voteStatus',
+            data: {
+              canVote: canVote
+            }
+          });
+
+          if(canVote==="true")
+            await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "false");
+
+          break;
         case 'restartGame':
           // Reset game state
           await context.redis.del(`subwords_${context.postId}`);
@@ -759,6 +773,8 @@ Devvit.addCustomPostType({
     };
 
     const onStartGame = async () => {
+
+        await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "false");
 
         console.log('Starting game, subscribing to channel');
         setWebviewVisible(true);
