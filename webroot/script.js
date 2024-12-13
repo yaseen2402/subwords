@@ -97,6 +97,15 @@ class WordGuesserGame {
           }
 
           if (message.type === "updateGameRound") {
+            window.parent?.postMessage(
+              {
+                type: "resetCanVote",
+                data: {
+                  no: "no data needed"
+                },
+              },
+              "*"
+            );
             console.log("Received game round update:", message);
             // Parse the stringified data
             const { currentRound } = message.data || {};
@@ -435,7 +444,7 @@ class WordGuesserGame {
         // Wait for the voteStatus to be updated
         await this.voteStatusPromise;
 
-        if (this.canVote != "false"){
+        if (this.canVote === "false"){
           console.log("canVote is false, u cannot vote in this round anymore")
           return;
         }

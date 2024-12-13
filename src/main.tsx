@@ -78,12 +78,7 @@ function sessionId(): string {
 Devvit.addSchedulerJob({
   name: 'CheckMostVotedWord',
   onRun: async (event, context) => {
-    console.log('Checking most voted word');
-    // console.log('VotedWordCheck job started', {
-    //   postId: event.data?.postId || 'No postId',
-    //   timestamp: new Date().toISOString(),
-    //   fullEventData: JSON.stringify(event)
-    // });
+    
     await context.redis.set(`subwords_${context.postId}_${context.reddit.getCurrentUser()}_canVote`, "true");
     if (!event.data?.postId) {
       console.error('No postId provided to CheckMostVotedWord job', {
@@ -98,9 +93,8 @@ Devvit.addSchedulerJob({
     const wordVotes: {[word: string]: number} = {};
     const cells = await context.redis.get(`subwords_${postId}`) || '';
     
-    await context.redis.set(`subwords_${postId}_${username}_canvote`, "true");
     
-    // console.log('Cells from Redis:', cells, 'for postId:', postId);
+    console.log(`set vote value true for username: ${username}`);
     
     if (cells) {
       const words = cells.split(',');
@@ -603,6 +597,8 @@ Devvit.addCustomPostType({
       switch (msg.type) {
         case 'btnTrigger':
           const canVote = await context.redis.get(`subwords_${context.postId}_${username}_canVote`) || '';
+          await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "false");
+          console.log(`changed the value of  canVote to false for ${username} after button triger`);
 
           context.ui.webView.postMessage('myWebView', {
             type: 'voteStatus',
@@ -610,9 +606,6 @@ Devvit.addCustomPostType({
               canVote: canVote
             }
           });
-
-          if(canVote==="true")
-            await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "false");
 
           break;
         case 'restartGame':
@@ -730,9 +723,14 @@ Devvit.addCustomPostType({
             }
           });
           break;
+        case 'resetCanVote':
+          await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "true");
+          console.log(`setting the vote count value of ${username} to true`)
+          break;
         case 'saveStory':
           const storyText = msg.data.story;
           await context.redis.set(`subwords_${context.postId}_story`, storyText);
+
           setStory(storyText);
           
           // Broadcast story update to realtime channel
@@ -774,8 +772,9 @@ Devvit.addCustomPostType({
 
     const onStartGame = async () => {
 
-        await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "false");
-
+        await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "true");
+        const initialVoteStatusCheck = await context.redis.get(`subwords_${context.postId}_${username}_canVote`);
+        console.log("initial vote status for ", `${username} is: ${initialVoteStatusCheck}`)
         console.log('Starting game, subscribing to channel');
         setWebviewVisible(true);
         channel.subscribe();
