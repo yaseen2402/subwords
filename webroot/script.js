@@ -407,7 +407,7 @@ class WordGuesserGame {
       }
     });
 
-    document.getElementById("checkAnswer").addEventListener("click", () => {
+    document.getElementById("confirm").addEventListener("click", () => {
       try {
         // Get all selected cells
         const selectedCells = Array.from(
