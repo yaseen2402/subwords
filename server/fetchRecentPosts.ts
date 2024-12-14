@@ -1,15 +1,15 @@
 import { Context, Subreddit, TriggerContext } from '@devvit/public-api';
 
-export async function fetchRecentPostTitles(context: Context | TriggerContext) {
+export async function fetchRecentPostTitles(context: Context | TriggerContext, subreddit: string) {
   try {
     // Get the current subreddit
-    const subreddit = await context.reddit.getCurrentSubreddit();
+    // const subreddit = await context.reddit.getCurrentSubreddit();
     
     // Get new posts from the subreddit using context.reddit
     const posts = await context.reddit.getNewPosts({
-      subredditName: 'funny',
+      subredditName: subreddit,
       // subredditName: subreddit.name,
-      limit: 50
+      limit: 30
     }).all();
     
     // Filter posts from the last 24 hours

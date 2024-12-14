@@ -260,10 +260,10 @@ class WordGuesserGame {
     });
 
     // Broadcast updated grid state to other players
-    this.channel.postMessage({
-      type: "updateCells",
-      cells: this.currentCells,
-    });
+    // this.channel.postMessage({
+    //   type: "updateCells",
+    //   cells: this.currentCells,
+    // });
   }
 
   // Synchronize countdown timer across all clients
