@@ -289,10 +289,27 @@ updateTextField(data) {
             cell.style.backgroundColor = color;
             cell.dataset.userCount = userCount.toString();
             
-            const playerCountEl = cell.querySelector('.cell-players') || document.createElement('div');
-            playerCountEl.classList.add('cell-players');
-            playerCountEl.textContent = userCount > 0 ? `+${userCount}` : '';
-            cell.appendChild(playerCountEl);
+            if (userCount > 0) {
+              const playerCountEl = cell.querySelector('.cell-players') || document.createElement('div');
+              playerCountEl.classList.add('cell-players');
+              playerCountEl.textContent = `+${userCount}`; 
+              playerCountEl.style.position = 'absolute';
+              playerCountEl.style.top = '5px';
+              playerCountEl.style.right = '5px';
+              playerCountEl.style.padding = '3px 6px';
+              playerCountEl.style.borderRadius = '5px';
+              playerCountEl.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+              playerCountEl.style.color = 'white';
+              playerCountEl.style.fontSize = '0.8rem';
+              playerCountEl.style.fontWeight = 'bold';
+              cell.appendChild(playerCountEl);
+          } else {
+              // Remove vite tag if it exists and userCount is 0
+              const existingPlayerCountEl = cell.querySelector('.cell-players');
+              if (existingPlayerCountEl) {
+                  cell.removeChild(existingPlayerCountEl);
+              }
+          }
         }
     });
 
