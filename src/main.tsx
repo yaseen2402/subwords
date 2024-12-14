@@ -11,8 +11,7 @@ import {
 const MAX_JOBS = 10;
 const JOB_LIST_KEY = 'active_job_list';
 const MAX_STORY_WORDS = 15;  // Maximum number of words in the story before game ends
-const MAX_ROUNDS = 3
-const FINAL_STORY_TITLE = "Final Story: A Collaborative Journey"
+const MAX_ROUNDS = 4
 
 type WordData = {
   word: string;
@@ -79,13 +78,8 @@ function sessionId(): string {
 Devvit.addSchedulerJob({
   name: 'CheckMostVotedWord',
   onRun: async (event, context) => {
-    console.log('Checking most voted word');
-    // console.log('VotedWordCheck job started', {
-    //   postId: event.data?.postId || 'No postId',
-    //   timestamp: new Date().toISOString(),
-    //   fullEventData: JSON.stringify(event)
-    // });
     
+    await context.redis.set(`subwords_${context.postId}_${context.reddit.getCurrentUser()}_canVote`, "true");
     if (!event.data?.postId) {
       console.error('No postId provided to CheckMostVotedWord job', {
         eventData: JSON.stringify(event),
@@ -94,11 +88,13 @@ Devvit.addSchedulerJob({
       return;
     }
 
+    const username = await context.reddit.getCurrentUser();
     const postId = event.data.postId;
     const wordVotes: {[word: string]: number} = {};
     const cells = await context.redis.get(`subwords_${postId}`) || '';
     
-    // console.log('Cells from Redis:', cells, 'for postId:', postId);
+    
+    console.log(`set vote value true for username: ${username}`);
     
     if (cells) {
       const words = cells.split(',');
@@ -146,9 +142,7 @@ Devvit.addSchedulerJob({
         // Reset votes for the used word
         await context.redis.set(`subwords_${postId}_${mostVotedWord}_votes`, '0');
 
-        // Remove the used word from current cells
-        const currentCellsStr = await context.redis.get(`subwords_${postId}`) || '';
-
+        
         const gameRoundKey = `subwords_${postId}_game_round`;
         
         // Ensure game round is initialized to 1 if not set
@@ -166,13 +160,13 @@ Devvit.addSchedulerJob({
 
         // Check if max rounds reached
         if (newRound >= MAX_ROUNDS) {
-          console.log('Max rounds reached. Ending game.');
           
           // Prepare final story with title
-          const finalStory = `${FINAL_STORY_TITLE}\n\n${initialStory}`;
+          const finalStory = currentStory;
           
           await context.redis.set(`subwords_${postId}_story`, finalStory);
           await context.redis.set(`subwords_${postId}_game_status`, 'GAME_OVER');
+          console.log('Max rounds reached. stored GAME_OVER  status in redis');
           
           try {
             await context.realtime.send('game_updates', {
@@ -375,30 +369,7 @@ Devvit.addTrigger({
         }
       }
       
-      // Fetch recent post titles from the same subreddit
-      // const titles = await fetchRecentPostTitles(context);
-      // console.log('📜 Fetched Titles:', { 
-      //   count: titles.length, 
-      //   titles: titles.slice(0, 5) // Log first 5 titles
-      // });
-
-      // // Generate initial 10 words
-      // const initialWords = await generateWordsFromTitles(context, titles);
-      // console.log('🧩 Generated Initial Words:', initialWords);
-
-      // // Store initial words in Redis with vote tracking
-      // await context.redis.set(`subwords_${event.post.id}`, initialWords.join(','));
       
-      // // Initialize vote and user tracking for each word
-      // for (const word of initialWords) {
-      //   await context.redis.set(`subwords_${event.post.id}_${word}_votes`, '0');
-      //   await context.redis.set(`subwords_${event.post.id}_${word}_users`, '0');
-      // }
-
-      // // Initialize story tracking
-      // await context.redis.set(`subwords_${event.post.id}_story`, '');
-      // await context.redis.set(`subwords_${event.post.id}_word_count`, '0');
-
       // Schedule periodic job to check word votes
       const jobId = await context.scheduler.runJob({
         cron: '*/30 * * * * *',
@@ -603,7 +574,7 @@ Devvit.addCustomPostType({
         context.ui.webView.postMessage('myWebView', {
           type: 'gameOver',
           data: {
-            finalStory: message.story,
+            story: message.story,
           }
         });
         
@@ -624,6 +595,25 @@ Devvit.addCustomPostType({
     //receiving messages from webview
     const onMessage = async (msg: any) => {
       switch (msg.type) {
+        case 'btnTrigger':
+          try{
+          console.log("entered button trigger condition in devvit")
+          const canVote = await context.redis.get(`subwords_${context.postId}_${username}_canVote`) || '';
+
+          await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "false");
+          console.log(`changed the value of  canVote to false for ${username} after button triger`);
+
+          context.ui.webView.postMessage('myWebView', {
+            type: 'voteStatus',
+            data: {
+              canVote: canVote
+            }
+          });
+        }catch(error) {
+          console.error('errro inside devvit btnTriger code', error);
+        }
+
+          break;
         case 'restartGame':
           // Reset game state
           await context.redis.del(`subwords_${context.postId}`);
@@ -739,9 +729,14 @@ Devvit.addCustomPostType({
             }
           });
           break;
+        case 'resetCanVote':
+          await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "true");
+          console.log(`setting the vote count value of ${username} to true`)
+          break;
         case 'saveStory':
           const storyText = msg.data.story;
           await context.redis.set(`subwords_${context.postId}_story`, storyText);
+
           setStory(storyText);
           
           // Broadcast story update to realtime channel
@@ -783,23 +778,24 @@ Devvit.addCustomPostType({
 
     const onStartGame = async () => {
 
+        await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "true");
+        const initialVoteStatusCheck = await context.redis.get(`subwords_${context.postId}_${username}_canVote`);
+        console.log("initial vote status for ", `${username} is: ${initialVoteStatusCheck}`)
         console.log('Starting game, subscribing to channel');
         setWebviewVisible(true);
         channel.subscribe();
         console.log('Channel subscribed');
-        const finalStory = await context.redis.get(`subwords_${context.postId}_story`);
+        // const finalStory = await context.redis.get(`subwords_${context.postId}_story`);
         const gameStatus = await context.redis.get(`subwords_${context.postId}_game_status`);
+        console.log(`checking game status on start: ${gameStatus}`);
+        console.log(`the final story is : ${story}`);
+
         if (gameStatus === 'GAME_OVER') {
           try {
-            // await context.realtime.send('game_updates', {
-            //   type: 'gameOver',
-            //   story: finalStory || {},
-            // });
-
             context.ui.webView.postMessage('myWebView', {
               type: 'gameOver',
               data: {
-                story: finalStory || {}
+                story: story || {}
               }
             });
           } catch (error) {
@@ -808,9 +804,10 @@ Devvit.addCustomPostType({
         }
 
         // Retrieve game round from Redis, default to 1 if not set
+        else{
         const gameRoundKey = `subwords_${context.postId}_game_round`;
         const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
-
+        
         context.ui.webView.postMessage('myWebView', {
           type: 'initialData',
           data: {
@@ -821,8 +818,9 @@ Devvit.addCustomPostType({
             timeRemaining: 30  // Add time remaining
           }
         });
+      }
     };
-
+    
     return (
       <vstack grow padding="small">
         <vstack
