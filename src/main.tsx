@@ -943,17 +943,19 @@ Devvit.addCustomPostType({
     };
     return (
       <vstack grow padding="small" >
+        <zstack width="100%" height="100%">
+        <image url="substory.png" imageWidth={100} imageHeight={100} width="100%" height="100%" />
         <vstack
           grow={!webviewVisible}
           height={webviewVisible ? "0%" : "100%"}
           alignment="middle center"
         >
-        <image url="substory.png" imageWidth={100} imageHeight={100} />
           <text size="xlarge" weight="bold">
             SubWords
           </text>
           <button onPress={onStartGame}>Start</button>
         </vstack>
+      </zstack>
         <vstack grow={webviewVisible} height={webviewVisible ? "100%" : "0%"}>
           <vstack
             border="thick"
