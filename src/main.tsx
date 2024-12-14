@@ -1,17 +1,20 @@
-import './createPost.js';
+import "./createPost.js";
 
-import { Devvit, useState, useChannel, useAsync} from '@devvit/public-api';
-import { 
-  fetchRecentPostTitles, 
-  generateWordsFromTitles, 
+import { Devvit, useState, useChannel } from "@devvit/public-api";
+import {
+  fetchRecentPostTitles,
+  generateWordsFromTitles,
   generateFollowUpWords,
-  generateConnectorWords
-} from '../server/fetchRecentPosts.js';
+  generateConnectorWords,
+  CompleteTheStory,
+} from "../server/fetchRecentPosts.js";
 
 const MAX_JOBS = 10;
+
 const JOB_LIST_KEY = 'active_job_list';
 const MAX_STORY_WORDS = 15;  // Maximum number of words in the story before game ends
-const MAX_ROUNDS = 4;
+const MAX_ROUNDS = 5;
+
 
 type WordData = {
   word: string;
@@ -20,35 +23,35 @@ type WordData = {
 
 type WebViewMessage =
   | {
-      type: 'initialData';
-      data: { 
-        username: string; 
+      type: "initialData";
+      data: {
+        username: string;
         currentCells: WordData[];
         story: string;
         gameRound: number;
       };
     }
   | {
-      type: 'saveCells';
+      type: "saveCells";
       data: { newCells: string[] };
     }
   | {
-      type: 'updateGameCells';
+      type: "updateGameCells";
       data: { currentCells: string[] };
     }
   | {
-      type: 'updateGameRound';
+      type: "updateGameRound";
       data: { gameRound: number };
     }
   | {
-      type: 'saveStory';
+      type: "saveStory";
       data: { story: string };
     }
   | {
-      type: 'voteWord';
+      type: "voteWord";
       data: { word: string };
     };
-    
+
 Devvit.configure({
   http: true,
   redditAPI: true,
@@ -58,17 +61,17 @@ Devvit.configure({
 
 Devvit.addSettings([
   {
-    name: 'gemini-api-key',
-    label: 'Gemini API Key',
-    type: 'string',
+    name: "gemini-api-key",
+    label: "Gemini API Key",
+    type: "string",
     isSecret: true,
-    scope: 'app',
+    scope: "app",
   },
 ]);
 
 function sessionId(): string {
-  let id = '';
-  const asciiZero = '0'.charCodeAt(0);
+  let id = "";
+  const asciiZero = "0".charCodeAt(0);
   for (let i = 0; i < 4; i++) {
     id += String.fromCharCode(Math.floor(Math.random() * 26) + asciiZero);
   }
@@ -76,40 +79,43 @@ function sessionId(): string {
 }
 
 Devvit.addSchedulerJob({
-  name: 'CheckMostVotedWord',
+  name: "CheckMostVotedWord",
   onRun: async (event, context) => {
-    
-    await context.redis.set(`subwords_${context.postId}_${context.reddit.getCurrentUser()}_canVote`, "true");
+    await context.redis.set(
+      `subwords_${context.postId}_${context.reddit.getCurrentUser()}_canVote`,
+      "true", {
+        expiration: new Date(Date.now() + 86400000) // 24 hours from now
+      }
+    );
     if (!event.data?.postId) {
-      console.error('No postId provided to CheckMostVotedWord job', {
+      console.error("No postId provided to CheckMostVotedWord job", {
         eventData: JSON.stringify(event),
-        contextData: JSON.stringify(context)
+        contextData: JSON.stringify(context),
       });
       return;
     }
 
     const username = await context.reddit.getCurrentUser();
     const postId = event.data.postId;
-    const wordVotes: {[word: string]: number} = {};
-    const cells = await context.redis.get(`subwords_${postId}`) || '';
-    
-    
+    const wordVotes: { [word: string]: number } = {};
+    const cells = (await context.redis.get(`subwords_${postId}`)) || "";
+
     console.log(`set vote value true for username: ${username}`);
-    
+
     if (cells) {
-      const words = cells.split(',');
+      const words = cells.split(",");
       // console.log('Words to check:', words);
-      
+
       for (const word of words) {
         const voteKey = `subwords_${postId}_${word}_votes`;
-        const votes = parseInt(await context.redis.get(voteKey) || '0');
-        
+        const votes = parseInt((await context.redis.get(voteKey)) || "0");
+
         // console.log(`Detailed vote check for ${word}:`, {
         //   voteKey: voteKey,
         //   votes: votes,
         //   redisValue: await context.redis.get(voteKey)
         // });
-        
+
         wordVotes[word] = votes;
       }
 
@@ -126,317 +132,328 @@ Devvit.addSchedulerJob({
       // });
 
       if (mostVotedWord) {
-        console.log('Detailed Word Processing:', {
-          mostVotedWord: mostVotedWord,
-          currentStory: await context.redis.get(`subwords_${postId}_story`) || 'No Story',
-          currentCells: await context.redis.get(`subwords_${postId}`) || 'No Cells'
-        });
-        const currentStory = await context.redis.get(`subwords_${postId}_story`) || '';
+        // console.log('Detailed Word Processing:', {
+        //   mostVotedWord: mostVotedWord,
+        //   currentStory: await context.redis.get(`subwords_${postId}_story`) || 'No Story',
+        //   currentCells: await context.redis.get(`subwords_${postId}`) || 'No Cells'
+        // });
+        const currentStory =
+          (await context.redis.get(`subwords_${postId}_story`)) || "";
         const initialStory = `${currentStory} ${mostVotedWord}`.trim();
-          
-        console.log('Current story:', currentStory);
-        console.log('Updated story:', initialStory);
-          
-        await context.redis.set(`subwords_${postId}_story`, initialStory);
-          
-        // Reset votes for the used word
-        await context.redis.set(`subwords_${postId}_${mostVotedWord}_votes`, '0');
 
-        
+        console.log("Current story:", currentStory);
+        console.log("Updated story:", initialStory);
+
+        await context.redis.set(`subwords_${postId}_story`, initialStory);
+
+        // Reset votes for the used word
+        await context.redis.set(
+          `subwords_${postId}_${mostVotedWord}_votes`,
+          "0", {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          }
+        );
+
         const gameRoundKey = `subwords_${postId}_game_round`;
-        
+
         // Ensure game round is initialized to 1 if not set
-        const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
+        const currentRound = parseInt(
+          (await context.redis.get(gameRoundKey)) || "1"
+        );
+
         const newRound = currentRound + 1;
-        await context.redis.set(gameRoundKey, newRound.toString());
-        
-        // Always increment and save the round when a most voted word is processed
-        console.log('incremented game round in redis:', {
-          currentRound: currentRound,
-          newRound: newRound,
-          gameRoundKey: gameRoundKey,
-          postId: postId
+        await context.redis.set(gameRoundKey, newRound.toString(), {
+          expiration: new Date(Date.now() + 86400000) // 24 hours from now
         });
+
+        // Always increment and save the round when a most voted word is processed
+        // console.log('incremented game round in redis:', {
+        //   currentRound: currentRound,
+        //   newRound: newRound,
+        //   gameRoundKey: gameRoundKey,
+        //   postId: postId
+        // });
 
         // Check if max rounds reached
         if (newRound >= MAX_ROUNDS) {
-          
-          // Prepare final story with title
-          const finalStory = currentStory;
-          
-          await context.redis.set(`subwords_${postId}_story`, finalStory);
-          await context.redis.set(`subwords_${postId}_game_status`, 'GAME_OVER');
-          console.log('Max rounds reached. stored GAME_OVER  status in redis');
-          
-          try {
-            await context.realtime.send('game_updates', {
-              type: 'gameOver',
-              story: finalStory,
-              gameStatus: 'GAME_OVER'
-            });
-          } catch (error) {
-            console.error('Failed to broadcast game over', error);
-          }
-          return;
-        }
+          const upperMostVotedWord = mostVotedWord.toUpperCase();
+          // const connectorWords = await generateConnectorWords(context, upperMostVotedWord);
+          const connectorWords = await CompleteTheStory(context, initialStory);
+          console.log(
+            `final story words received from ai are: ${connectorWords}`
+          );
 
-        // Check story length and game status
-        const st = initialStory.split(' ');
-        if (st.length >= MAX_STORY_WORDS) {
-          await context.redis.set(`subwords_${postId}_game_status`, 'GAME_OVER');
-          
+          const expandedWord =
+            connectorWords.length > 0
+              ? `${upperMostVotedWord} ${connectorWords.join(" ")}`.trim()
+              : upperMostVotedWord;
+
+          // Update story with expanded word
+          const expandedStory = `${currentStory} ${expandedWord}`.trim();
+          const finalStory = expandedStory;
+
+          await context.redis.set(`subwords_${postId}_story`, finalStory);
+          await context.redis.set(
+            `subwords_${postId}_game_status`,
+            "GAME_OVER"
+          );
+          console.log("Max rounds reached. stored GAME_OVER  status in redis");
+
           try {
-            await context.realtime.send('game_updates', {
-              type: 'gameOver',
-              story: initialStory,
-              postId: postId
+            await context.realtime.send("game_updates", {
+              type: "gameOver",
+              story: finalStory,
+              gameStatus: "GAME_OVER",
             });
           } catch (error) {
-            console.error('Failed to broadcast game over', error);
+            console.error("Failed to broadcast game over", error);
           }
           return;
         }
 
         // Generate connectors for the most voted word
         const upperMostVotedWord = mostVotedWord.toUpperCase();
-        const connectorWords = await generateConnectorWords(context, upperMostVotedWord);
-        
-        // Append connectors to the most voted word
-        const expandedWord = connectorWords.length > 0 
-          ? `${upperMostVotedWord} ${connectorWords.join(' ')}`.trim()
-          : upperMostVotedWord;
-        
+        // const connectorWords = await generateConnectorWords(context, upperMostVotedWord);
+        const connectorWords = await generateConnectorWords(
+          context,
+          initialStory
+        );
+        console.log(`connectors words received from ai are: ${connectorWords}`);
+
+        const expandedWord =
+          connectorWords.length > 0
+            ? `${upperMostVotedWord} ${connectorWords.join(" ")}`.trim()
+            : upperMostVotedWord;
+
         // Update story with expanded word
         const expandedStory = `${currentStory} ${expandedWord}`.trim();
         await context.redis.set(`subwords_${postId}_story`, expandedStory);
 
         // Generate follow-up words based on the expanded story context
-        const newFollowUpWords = await generateFollowUpWords(context, expandedStory);
-        
-        console.log('Follow-up Word Generation:', {
-          expandedStory: expandedStory,
-          generatedWords: newFollowUpWords
-        });
-
-        // Filter out words already used in the story
-        const usedWords = expandedStory.split(' ');
-        const availableNewWords = newFollowUpWords.filter(word => 
-          !usedWords.includes(word)
+        const newFollowUpWords = await generateFollowUpWords(
+          context,
+          expandedStory
         );
 
-        console.log('Available New Words:', {
-          usedWords: usedWords,
-          availableNewWords: availableNewWords
-        });
+        // console.log("Follow-up Word Generation:", {
+        //   expandedStory: expandedStory,
+        //   generatedWords: newFollowUpWords,
+        // });
+
+        // Filter out words already used in the story
+        const usedWords = expandedStory.split(" ");
+        const availableNewWords = newFollowUpWords.filter(
+          (word) => !usedWords.includes(word)
+        );
+
+        // console.log('Available New Words:', {
+        //   usedWords: usedWords,
+        //   availableNewWords: availableNewWords
+        // });
 
         // Create new cells, replacing ALL existing cells
-        let newCells = availableNewWords.slice(0, 10).map(word => ({
+        let newCells = availableNewWords.slice(0, 10).map((word) => ({
           word,
-          userCount: 0
+          userCount: 0,
         }));
 
-        // Ensure we have at least some words to continue the game
-        // if (newCells.length === 0) {
-        //   console.error('No new cells generated! Falling back to default words.');
-        //   newCells = [
-        //     { word: 'CONTINUE', userCount: 0 },
-        //     { word: 'STORY', userCount: 0 },
-        //     { word: 'GAME', userCount: 0 },
-        //     { word: 'PLAY', userCount: 0 },
-        //     { word: 'MORE', userCount: 0 }
-        //   ] as WordData[];
-        // }
-
-        console.log('New Cells Generated:', {
-          cellCount: newCells.length,
-          words: newCells.map(cell => cell.word)
-        });
+        // console.log('New Cells Generated:', {
+        //   cellCount: newCells.length,
+        //   words: newCells.map(cell => cell.word)
+        // });
 
         // COMPLETELY replace existing cells in Redis
-        await context.redis.set(`subwords_${postId}`, 
-          newCells.map(cell => cell.word).join(',')
+        await context.redis.set(
+          `subwords_${postId}`,
+          newCells.map((cell) => cell.word).join(","), {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          }
         );
 
         // Reset all vote counts for new words
         for (const cell of newCells) {
-          await context.redis.set(`subwords_${postId}_${cell.word}_votes`, '0');
-          await context.redis.set(`subwords_${postId}_${cell.word}_users`, '0');
+          await context.redis.set(`subwords_${postId}_${cell.word}_votes`, "0", {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          });
+          await context.redis.set(`subwords_${postId}_${cell.word}_users`, "0", {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          });
         }
 
         // Broadcast cell update with new words
         try {
-          console.log('Broadcasting new cells:', {
+          console.log("Broadcasting new cells:", {
             cellCount: newCells.length,
-            words: newCells.map(cell => cell.word),
-            postId: postId
+            words: newCells.map((cell) => cell.word),
+            postId: postId,
           });
 
-          
-
-          await context.realtime.send('game_updates', {
-            type: 'updateCells',
+          await context.realtime.send("game_updates", {
+            type: "updateCells",
             cells: newCells,
             postId: postId,
           });
 
-          await context.realtime.send('game_updates', {
-            type: 'updateRound',
+          await context.realtime.send("game_updates", {
+            type: "updateRound",
             round: newRound,
             postId: postId,
-          })
+          });
         } catch (error) {
-          console.error('Failed to broadcast cell update', {
+          console.error("Failed to broadcast cell update", {
             error: error instanceof Error ? error.message : error,
             newCellsCount: newCells.length,
-            newCellsWords: newCells.map(cell => cell.word),
-            postId: postId
+            newCellsWords: newCells.map((cell) => cell.word),
+            postId: postId,
           });
 
           // Fallback: Use Redis to store cell update
-          await context.redis.set(`subwords_${postId}_backup_cells`, 
-            JSON.stringify(newCells)
-          );
+          // await context.redis.set(`subwords_${postId}_backup_cells`,
+          //   JSON.stringify(newCells)
+          // );
         }
 
         try {
-
           const storyUpdatePayload = {
-            type: 'storyUpdate',
+            type: "storyUpdate",
             word: expandedWord,
             story: expandedStory,
             expandedWord: expandedWord,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           };
 
           await Promise.all([
-            context.realtime.send('updateStory', storyUpdatePayload),
+            context.realtime.send("updateStory", storyUpdatePayload),
             // context.realtime.send('game_updates', {
             //   ...storyUpdatePayload,
             //   type: 'gameRoundUpdate'
             // })
           ]);
 
-          console.log('Story update broadcasted', storyUpdatePayload);
+          console.log("Story update broadcasted", storyUpdatePayload);
 
           // Store comprehensive update in Redis
           // await context.redis.set(`subwords_${postId}_story`, JSON.stringify({
           //   storyUpdate: storyUpdatePayload,
           // }));
-
         } catch (realtimeError) {
-          console.error('Failed to send realtime event', {
+          console.error("Failed to send realtime event", {
             error: realtimeError,
             message: {
               word: expandedWord,
               story: expandedStory,
-              expandedWord: expandedWord
-            }
+              expandedWord: expandedWord,
+            },
           });
-
         }
       } else {
-        console.log('No words with votes found');
+        console.log("No words with votes found");
       }
     } else {
-      console.log('No cells found in Redis');
+      console.log("No cells found in Redis");
     }
   },
 });
 
 Devvit.addTrigger({
-  event: 'PostCreate',
+  event: "PostCreate",
   onEvent: async (event, context) => {
-    console.log('🚀 PostCreate Trigger Activated', {
+    console.log("🚀 PostCreate Trigger Activated", {
       postId: event.post?.id,
-      subredditId: event.post?.subredditId
+      subredditId: event.post?.subredditId,
     });
 
     if (!event.post || !event.post.id) {
-      console.error('❌ Invalid post data', { event });
+      console.error("❌ Invalid post data", { event });
       return;
     }
-    
-    try {
 
-      let activeJobs = JSON.parse(await context.redis.get(JOB_LIST_KEY) || '[]');
-      
+    try {
+      let activeJobs = JSON.parse(
+        (await context.redis.get(JOB_LIST_KEY)) || "[]"
+      );
+
       // If we're at the limit, remove the oldest job
       if (activeJobs.length >= MAX_JOBS) {
         const oldestJob = activeJobs.shift();
         if (oldestJob) {
           await context.scheduler.cancelJob(oldestJob.jobId);
-          console.log('Cancelled old job', { jobId: oldestJob.jobId, postId: oldestJob.postId });
+          console.log("Cancelled old job", {
+            jobId: oldestJob.jobId,
+            postId: oldestJob.postId,
+          });
         }
       }
-      
-      
+
       // Schedule periodic job to check word votes
       const jobId = await context.scheduler.runJob({
-        cron: '*/30 * * * * *',
-        name: 'CheckMostVotedWord',
-        data: { 
+        cron: "*/30 * * * * *",
+        name: "CheckMostVotedWord",
+        data: {
           postId: event.post.id,
           createdAt: new Date().toISOString(),
           triggerContext: {
             subredditId: event.post.subredditId,
-          }
+          },
         },
       });
 
       activeJobs.push({ jobId, postId: event.post.id });
       await context.redis.set(JOB_LIST_KEY, JSON.stringify(activeJobs));
-      console.log('Scheduled new job', { jobId, postId: event.post.id });
+      console.log("Scheduled new job", { jobId, postId: event.post.id });
 
-      console.log('✅ Game Initialization Complete', { 
+      console.log("✅ Game Initialization Complete", {
         postId: event.post.id,
         // initialWordCount: initialWords.length,
-        jobId 
+        jobId,
       });
-
     } catch (error) {
-      console.error('❌ Post Creation Error', { 
-        error: error instanceof Error ? error.message : error 
+      console.error("❌ Post Creation Error", {
+        error: error instanceof Error ? error.message : error,
       });
     }
   },
 });
 
 Devvit.addCustomPostType({
-  name: 'SubWords',
-  height: 'tall',
+  name: "SubWords",
+  height: "tall",
   render: (context) => {
-    // Load username 
+    // Load username
     const [username] = useState(async () => {
       const currUser = await context.reddit.getCurrentUser();
-      return currUser?.username ?? 'anon';
+      return currUser?.username ?? "anon";
     });
-    
+
     // Initialize game state from Redis
     const [cells, setCells] = useState(async () => {
+      const redisCells =
+        (await context.redis.get(`subwords_${context.postId}`)) || null;
+      const allWordsStr =
+        (await context.redis.get(`subwords_${context.postId}_all_words`)) || "";
+      const allWords = allWordsStr ? allWordsStr.split(",") : [];
 
-
-      const redisCells = await context.redis.get(`subwords_${context.postId}`) || null;
-      const allWordsStr = await context.redis.get(`subwords_${context.postId}_all_words`) || '';
-      const allWords = allWordsStr ? allWordsStr.split(',') : [];
-      
       const gameRoundKey = `subwords_${context.postId}_game_round`;
-      const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
-        
-      console.log('Current Game Round:', {
+      const currentRound = parseInt(
+        (await context.redis.get(gameRoundKey)) || "1"
+      );
+
+      console.log("Current Game Round:", {
         gameRoundKey: gameRoundKey,
         currentRound: currentRound,
       });
 
       if (redisCells) {
-        const existingCells = redisCells.split(',');
+        const existingCells = redisCells.split(",");
         const cellsWithCounts: WordData[] = await Promise.all(
           existingCells
-            .filter((word: string | undefined): word is string => 
-              word !== undefined && word.trim() !== ''
+            .filter(
+              (word: string | undefined): word is string =>
+                word !== undefined && word.trim() !== ""
             )
             .map(async (word: string) => {
               const key = `subwords_${context.postId}_${word}_users`;
-              const count = parseInt(await context.redis.get(key) || '0');
+              const count = parseInt((await context.redis.get(key)) || "0");
               return { word, userCount: count };
             })
         );
@@ -447,15 +464,23 @@ Devvit.addCustomPostType({
           const newCellsWithCounts = await Promise.all(
             newWords.map(async (word: string) => ({
               word,
-              userCount: 0
+              userCount: 0,
             }))
           );
 
           // Update Redis with new words
           const updatedCells = [...existingCells, ...newWords];
-          await context.redis.set(`subwords_${context.postId}`, updatedCells.join(','));
-          await context.redis.set(`subwords_${context.postId}_all_words`, 
-            allWords.slice(5 - cellsWithCounts.length).join(',')
+          await context.redis.set(
+            `subwords_${context.postId}`,
+            updatedCells.join(","), {
+              expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            }
+          );
+          await context.redis.set(
+            `subwords_${context.postId}_all_words`,
+            allWords.slice(5 - cellsWithCounts.length).join(","), {
+              expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            }
           );
 
           return [...cellsWithCounts, ...newCellsWithCounts];
@@ -466,31 +491,48 @@ Devvit.addCustomPostType({
 
       // If no words, generate dynamically
       try {
-        const titles = await fetchRecentPostTitles(context);
+        const subreddits = ["funny", "news", "technology", "anime"];
+
+        // Select a random word
+        const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
+
+        console.log("Selected subreddit:", subreddit);
+        const titles = await fetchRecentPostTitles(context, subreddit);
         const generatedWords = await generateWordsFromTitles(context, titles);
-      
+
         // Take first 10 words
         const initialWords = generatedWords.slice(0, 10);
-      
-        // Store remaining words in Redis for future use
-        await context.redis.set(`subwords_${context.postId}_all_words`, generatedWords.slice(10).join(','));
-        await context.redis.set(`subwords_${context.postId}_total_words`, generatedWords.join(','));
 
-        
+        // Store remaining words in Redis for future use
+        await context.redis.set(
+          `subwords_${context.postId}_all_words`,
+          generatedWords.slice(10).join(","), {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          }
+        );
+        await context.redis.set(
+          `subwords_${context.postId}_total_words`,
+          generatedWords.join(","), {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          }
+        );
 
         const cellsWithCounts: WordData[] = initialWords
-          .filter((word: string | undefined): word is string => 
-            word !== undefined && word.trim() !== ''
+          .filter(
+            (word: string | undefined): word is string =>
+              word !== undefined && word.trim() !== ""
           )
-          .map(word => ({
+          .map((word) => ({
             word,
-            userCount: 0
+            userCount: 0,
           }));
 
         // Add "End Story" cell from round 3 onwards
-        const gameRoundKey = `subwords_${context.postId}_game_round`;
-        const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
-        
+        // const gameRoundKey = `subwords_${context.postId}_game_round`;
+        // const currentRound = parseInt(
+        //   (await context.redis.get(gameRoundKey)) || "1"
+        // );
+
         // if (currentRound >= 3) {
         //   cellsWithCounts.push({
         //     word: 'END STORY',
@@ -499,33 +541,43 @@ Devvit.addCustomPostType({
         // }
 
         // Store initial words in Redis
-        await context.redis.set(`subwords_${context.postId}`, initialWords.join(','));
+        await context.redis.set(
+          `subwords_${context.postId}`,
+          initialWords.join(","), {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          }
+        );
 
         // Check if we have enough words
-        if (cellsWithCounts.length === 0) {
-          // Game over scenario: no more words available
-          await context.redis.set(`subwords_${context.postId}_game_status`, 'GAME_OVER');
-          return [{ word: 'GAME OVER', userCount: 0 }];
-        }
+        // if (cellsWithCounts.length === 0) {
+        //   // Game over scenario: no more words available
+        //   await context.redis.set(
+        //     `subwords_${context.postId}_game_status`,
+        //     "GAME_OVER"
+        //   );
+        //   return [{ word: "GAME OVER", userCount: 0 }];
+        // }
 
         return cellsWithCounts;
       } catch (error) {
-        console.error('Word generation failed, using fallback', error);
-        
+        console.error("Word generation failed, using fallback", error);
+
         // Game over scenario: no words available
-        await context.redis.set(`subwords_${context.postId}_game_status`, 'GAME_OVER');
-        return [{ word: 'GAME OVER', userCount: 0 }];
+        await context.redis.set(
+          `subwords_${context.postId}_game_status`,
+          "GAME_OVER"
+        );
+        return [{ word: "GAME OVER", userCount: 0 }];
       }
     });
 
     const [story, setStory] = useState(async () => {
-      const redisStory = await context.redis.get(`subwords_${context.postId}_story`) || '';
+      const redisStory =
+        (await context.redis.get(`subwords_${context.postId}_story`)) || "";
       return redisStory;
     });
-
-
+ 
     // Set up periodic word voting check
-  
 
     const [webviewVisible, setWebviewVisible] = useState(false);
 
@@ -535,86 +587,94 @@ Devvit.addCustomPostType({
       name: `updateStory`,
       onMessage: (data) => {
         // Update local state if needed
-        context.ui.webView.postMessage('myWebView', {
-          type: 'updateTextField',
-          data: data
+        context.ui.webView.postMessage("myWebView", {
+          type: "updateTextField",
+          data: data,
         });
       },
     });
-    
+
     channel2.subscribe();
-    
+
     const channel = useChannel({
       name: `game_updates`,
       onMessage: (message: any) => {
-        console.log('Channel received message:', message);
-        
+        console.log("Channel received message:", message);
+
         if (message.session === mySession) {
-          console.log('Ignoring own message');
+          console.log("Ignoring own message");
           return;
         }
-        
+
         setCells(message.cells);
-        
+
         // Notify webview of updates
-        context.ui.webView.postMessage('myWebView', {
-          type: 'updateGameCells',
+        context.ui.webView.postMessage("myWebView", {
+          type: "updateGameCells",
           data: {
             currentCells: message.cells,
-          }
+          },
         });
 
-        context.ui.webView.postMessage('myWebView', {
-          type: 'updateGameRound',
+        context.ui.webView.postMessage("myWebView", {
+          type: "updateGameRound",
           data: {
             currentRound: message.round,
-          }
+          },
         });
 
-        context.ui.webView.postMessage('myWebView', {
-          type: 'gameOver',
+        context.ui.webView.postMessage("myWebView", {
+          type: "gameOver",
           data: {
             story: message.story,
-          }
+          },
         });
-        
+
         // Ensure the local state is also updated
         setCells(message.cells);
       },
       onSubscribed: () => {
-        console.log('Connected to realtime channel');
+        console.log("Connected to realtime channel");
       },
       onUnsubscribed: () => {
-        console.log('Disconnected from realtime channel');
-      }
+        console.log("Disconnected from realtime channel");
+      },
     });
 
-
-    
     channel.subscribe();
     //receiving messages from webview
     const onMessage = async (msg: any) => {
       switch (msg.type) {
-        case 'btnTrigger':
-          try{
-          console.log("entered button trigger condition in devvit")
-          const canVote = await context.redis.get(`subwords_${context.postId}_${username}_canVote`) || '';
+        case "btnTrigger":
+          try {
+            console.log("entered button trigger condition in devvit");
+            const canVote =
+              (await context.redis.get(
+                `subwords_${context.postId}_${username}_canVote`
+              )) || "";
 
-          await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "false");
-          console.log(`changed the value of  canVote to false for ${username} after button triger`);
+            await context.redis.set(
+              `subwords_${context.postId}_${username}_canVote`,
+              "false", {
+                expiration: new Date(Date.now() + 86400000) // 24 hours from now
+              }
+            );
+            console.log(
+              `changed the value of  canVote to false for ${username} after button triger`
+            );
 
-          context.ui.webView.postMessage('myWebView', {
-            type: 'voteStatus',
-            data: {
-              canVote: canVote
-            }
-          });
-        }catch(error) {
-          console.error('errro inside devvit btnTriger code', error);
-        }
+            context.ui.webView.postMessage("myWebView", {
+              type: "voteStatus",
+              data: {
+                canVote: canVote,
+              },
+            });
+          } catch (error) {
+            console.error("errro inside devvit btnTriger code", error);
+          }
 
           break;
-        case 'restartGame':
+        case "restartGame":
           // Reset game state
           await context.redis.del(`subwords_${context.postId}`);
           await context.redis.del(`subwords_${context.postId}_all_words`);
@@ -623,43 +683,59 @@ Devvit.addCustomPostType({
           await context.redis.del(`subwords_${context.postId}_game_round`);
 
           // Regenerate words
-          const titles = await fetchRecentPostTitles(context);
+          const titles = await fetchRecentPostTitles(context, "funny");
           const generatedWords = await generateWordsFromTitles(context, titles);
-          
+
           const initialWords = generatedWords.slice(0, 10);
-          await context.redis.set(`subwords_${context.postId}_all_words`, generatedWords.slice(10).join(','));
+          await context.redis.set(
+            `subwords_${context.postId}_all_words`,
+            generatedWords.slice(10).join(","), {
+              expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            }
+          );
 
           const cellsWithCounts: WordData[] = initialWords
-            .filter((word: string | undefined): word is string => 
-              word !== undefined && word.trim() !== ''
+            .filter(
+              (word: string | undefined): word is string =>
+                word !== undefined && word.trim() !== ""
             )
-            .map(word => ({
+            .map((word) => ({
               word,
-              userCount: 0
+              userCount: 0,
             }));
 
-          await context.redis.set(`subwords_${context.postId}`, initialWords.join(','));
-          await context.redis.set(`subwords_${context.postId}_game_round`, '1');
+          await context.redis.set(
+            `subwords_${context.postId}`,
+            initialWords.join(","), {
+              expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            }
+          );
+          await context.redis.set(`subwords_${context.postId}_game_round`, "1", {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          });
 
           // Notify webview with new game state
-          context.ui.webView.postMessage('myWebView', {
-            type: 'initialData',
+          context.ui.webView.postMessage("myWebView", {
+            type: "initialData",
             data: {
               username: username,
               currentCells: cellsWithCounts,
-              story: '',
+              story: "",
               gameRound: 1,
-              timeRemaining: 30  // Reset timer to 30 seconds
-            }
+              timeRemaining: 30, // Reset timer to 30 seconds
+            },
           });
           break;
-        case 'saveCells':
+        case "saveCells":
           // Process only the newly selected cells
-          const existingCellsStr = await context.redis.get(`subwords_${context.postId}`) || '';
-          const existingCells = existingCellsStr ? existingCellsStr.split(',') : [];
+          const existingCellsStr =
+            (await context.redis.get(`subwords_${context.postId}`)) || "";
+          const existingCells = existingCellsStr
+            ? existingCellsStr.split(",")
+            : [];
 
           // Validate that new cells are actually in the current game cells
-          const validNewCells = msg.data.newCells.filter((word: string) => 
+          const validNewCells = msg.data.newCells.filter((word: string) =>
             existingCells.includes(word)
           );
 
@@ -667,108 +743,142 @@ Devvit.addCustomPostType({
             existingCells.map(async (word: string) => {
               const key = `subwords_${context.postId}_${word}_users`;
               const voteKey = `subwords_${context.postId}_${word}_votes`;
-              
-              const userCount = parseInt(await context.redis.get(key) || '0');
-              const voteCount = parseInt(await context.redis.get(voteKey) || '0');
-              
+
+              const userCount = parseInt((await context.redis.get(key)) || "0");
+              const voteCount = parseInt(
+                (await context.redis.get(voteKey)) || "0"
+              );
+
               const isNewlySelected = validNewCells.includes(word);
-              
+
               // Only increment if the word is newly selected
-              const updatedUserCount = isNewlySelected ? userCount + 1 : userCount;
-              const updatedVoteCount = isNewlySelected ? voteCount + 1 : voteCount;
-              
-              await context.redis.set(key, updatedUserCount.toString());
-              await context.redis.set(voteKey, updatedVoteCount.toString());
-              
-              return { 
-                word, 
-                userCount: updatedUserCount 
+              const updatedUserCount = isNewlySelected
+                ? userCount + 1
+                : userCount;
+              const updatedVoteCount = isNewlySelected
+                ? voteCount + 1
+                : voteCount;
+
+              await context.redis.set(key, updatedUserCount.toString(), {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          });
+              await context.redis.set(voteKey, updatedVoteCount.toString(), {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          });
+
+              return {
+                word,
+                userCount: updatedUserCount,
               };
             })
           );
 
           // Check if "END STORY" cell exists and has majority votes
           const gameRoundKey = `subwords_${context.postId}_game_round`;
-          const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
-          
+          const currentRound = parseInt(
+            (await context.redis.get(gameRoundKey)) || "1"
+          );
+
           if (currentRound >= 3) {
             const endStoryVoteKey = `subwords_${context.postId}_END STORY_votes`;
-            const endStoryVotes = parseInt(await context.redis.get(endStoryVoteKey) || '0');
-            const totalVotes = await updatedCellsWithCounts.reduce(async (sumPromise, cell) => {
-              const sum = await sumPromise;
-              const voteKey = `subwords_${context.postId}_${cell.word}_votes`;
-              return sum + parseInt(await context.redis.get(voteKey) || '0');
-            }, Promise.resolve(0));
+            const endStoryVotes = parseInt(
+              (await context.redis.get(endStoryVoteKey)) || "0"
+            );
+            const totalVotes = await updatedCellsWithCounts.reduce(
+              async (sumPromise, cell) => {
+                const sum = await sumPromise;
+                const voteKey = `subwords_${context.postId}_${cell.word}_votes`;
+                return (
+                  sum + parseInt((await context.redis.get(voteKey)) || "0")
+                );
+              },
+              Promise.resolve(0)
+            );
 
             if (endStoryVotes > totalVotes / 2) {
               // Story ends, notify webview
-              context.ui.webView.postMessage('myWebView', {
-                type: 'storyCompleted',
+              context.ui.webView.postMessage("myWebView", {
+                type: "storyCompleted",
                 data: {
-                  story: await context.redis.get(`subwords_${context.postId}_story`) || ''
-                }
+                  story:
+                    (await context.redis.get(
+                      `subwords_${context.postId}_story`
+                    )) || "",
+                },
               });
             }
           }
 
           // Broadcast updated cells to all players in real-time
           await channel.send({
-            type: 'updateCells',
+            type: "updateCells",
             cells: updatedCellsWithCounts,
-            session: mySession  // Prevent echo
+            session: mySession, // Prevent echo
           });
-          
+
           // Update the state with the new cells
           setCells(updatedCellsWithCounts);
 
           // Also send to webview for immediate update
-          context.ui.webView.postMessage('myWebView', {
-            type: 'updateGameCells',
+          context.ui.webView.postMessage("myWebView", {
+            type: "updateGameCells",
             data: {
-              currentCells: updatedCellsWithCounts
-            }
+              currentCells: updatedCellsWithCounts,
+            },
           });
           break;
-        case 'resetCanVote':
-          await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "true");
-          console.log(`setting the vote count value of ${username} to true`)
+        case "resetCanVote":
+          await context.redis.set(
+            `subwords_${context.postId}_${username}_canVote`,
+            "true", {
+              expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            }
+          );
+          console.log(`setting the vote count value of ${username} to true`);
           break;
-        case 'saveStory':
+        case "saveStory":
           const storyText = msg.data.story;
-          await context.redis.set(`subwords_${context.postId}_story`, storyText);
+          await context.redis.set(
+            `subwords_${context.postId}_story`,
+            storyText
+          );
 
           setStory(storyText);
-          
+
           // Broadcast story update to realtime channel
           await channel.send({
-            type: 'storyUpdate',
-            story: storyText
+            type: "storyUpdate",
+            story: storyText,
           });
 
           // Also send to the updateStory channel for broader compatibility
           await channel2.send({
-            type: 'storyUpdate',
+            type: "storyUpdate",
             word: storyText,
-            story: storyText
+            story: storyText,
           });
           break;
-        case 'voteWord':
+        case "voteWord":
           const votedWord = msg.data.word;
           const voteKey = `subwords_${context.postId}_${votedWord}_votes`;
-          const currentVotes = parseInt(await context.redis.get(voteKey) || '0');
+          const currentVotes = parseInt(
+            (await context.redis.get(voteKey)) || "0"
+          );
           const newVoteCount = currentVotes + 1;
-          await context.redis.set(voteKey, newVoteCount.toString());
-          
-          console.log('Word voted:', {
+          await context.redis.set(voteKey, newVoteCount.toString(), {
+            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          });
+
+          console.log("Word voted:", {
             word: votedWord,
             voteKey: voteKey,
             previousVotes: currentVotes,
-            newVotes: newVoteCount
+            newVotes: newVoteCount,
           });
           break;
 
-        case 'initialData':
-        case 'updateGameCells':
+        case "initialData":
+        case "updateGameCells":
           break;
 
         default:
@@ -777,55 +887,68 @@ Devvit.addCustomPostType({
     };
 
     const onStartGame = async () => {
-
-        await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "true");
-        const initialVoteStatusCheck = await context.redis.get(`subwords_${context.postId}_${username}_canVote`);
-        console.log("initial vote status for ", `${username} is: ${initialVoteStatusCheck}`)
-        console.log('Starting game, subscribing to channel');
-        setWebviewVisible(true);
-        channel.subscribe();
-        console.log('Channel subscribed');
-        // const finalStory = await context.redis.get(`subwords_${context.postId}_story`);
-        const gameStatus = await context.redis.get(`subwords_${context.postId}_game_status`);
-        console.log(`checking game status on start: ${gameStatus}`);
-        console.log(`the final story is : ${story}`);
-
-        if (gameStatus === 'GAME_OVER') {
-          try {
-            context.ui.webView.postMessage('myWebView', {
-              type: 'gameOver',
-              data: {
-                story: story || {}
-              }
-            });
-          } catch (error) {
-            console.error('Failed to broadcast game over', error);
-          }
+      await context.redis.set(
+        `subwords_${context.postId}_${username}_canVote`,
+        "true", {
+          expiration: new Date(Date.now() + 86400000) // 24 hours from now
         }
+      );
+      const initialVoteStatusCheck = await context.redis.get(
+        `subwords_${context.postId}_${username}_canVote`
+      );
+      console.log(
+        "initial vote status for ",
+        `${username} is: ${initialVoteStatusCheck}`
+      );
+      console.log("Starting game, subscribing to channel");
+      setWebviewVisible(true);
+      channel.subscribe();
+      console.log("Channel subscribed");
+      // const finalStory = await context.redis.get(`subwords_${context.postId}_story`);
+      const gameStatus = await context.redis.get(
+        `subwords_${context.postId}_game_status`
+      );
+      console.log(`checking game status on start: ${gameStatus}`);
+      console.log(`the final story is : ${story}`);
 
-        // Retrieve game round from Redis, default to 1 if not set
-        else{
+      if (gameStatus === "GAME_OVER") {
+        try {
+          context.ui.webView.postMessage("myWebView", {
+            type: "gameOver",
+            data: {
+              story: story || {},
+            },
+          });
+        } catch (error) {
+          console.error("Failed to broadcast game over", error);
+        }
+      }
+
+      // Retrieve game round from Redis, default to 1 if not set
+      else {
         const gameRoundKey = `subwords_${context.postId}_game_round`;
-        const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
-        
-        context.ui.webView.postMessage('myWebView', {
-          type: 'initialData',
+        const currentRound = parseInt(
+          (await context.redis.get(gameRoundKey)) || "1"
+        );
+
+        context.ui.webView.postMessage("myWebView", {
+          type: "initialData",
           data: {
             username: username,
             currentCells: cells,
             story: story,
             gameRound: currentRound,
-            timeRemaining: 30  // Add time remaining
-          }
+            timeRemaining: 30, // Add time remaining
+          },
         });
       }
     };
-    
+
     return (
       <vstack grow padding="small">
         <vstack
           grow={!webviewVisible}
-          height={webviewVisible ? '0%' : '100%'}
+          height={webviewVisible ? "0%" : "100%"}
           alignment="middle center"
         >
           <text size="xlarge" weight="bold">
@@ -833,14 +956,18 @@ Devvit.addCustomPostType({
           </text>
           <button onPress={onStartGame}>Start</button>
         </vstack>
-        <vstack grow={webviewVisible} height={webviewVisible ? '100%' : '0%'}>
-          <vstack border="thick" borderColor="black" height={webviewVisible ? '100%' : '0%'}>
+        <vstack grow={webviewVisible} height={webviewVisible ? "100%" : "0%"}>
+          <vstack
+            border="thick"
+            borderColor="black"
+            height={webviewVisible ? "100%" : "0%"}
+          >
             <webview
               id="myWebView"
               url="page.html"
-              onMessage={(msg)=>onMessage(msg as WebViewMessage)}
+              onMessage={(msg) => onMessage(msg as WebViewMessage)}
               grow
-              height={webviewVisible ? '100%' : '0%'}
+              height={webviewVisible ? "100%" : "0%"}
             />
           </vstack>
         </vstack>

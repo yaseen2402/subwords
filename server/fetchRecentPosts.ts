@@ -1,15 +1,15 @@
 import { Context, Subreddit, TriggerContext } from '@devvit/public-api';
 
-export async function fetchRecentPostTitles(context: Context | TriggerContext) {
+export async function fetchRecentPostTitles(context: Context | TriggerContext, subreddit: string) {
   try {
     // Get the current subreddit
-    const subreddit = await context.reddit.getCurrentSubreddit();
+    // const subreddit = await context.reddit.getCurrentSubreddit();
     
     // Get new posts from the subreddit using context.reddit
     const posts = await context.reddit.getNewPosts({
-      subredditName: 'australia',
+      subredditName: subreddit,
       // subredditName: subreddit.name,
-      limit: 50
+      limit: 30
     }).all();
     
     // Filter posts from the last 24 hours
@@ -142,26 +142,33 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
 }
 
 export async function generateConnectorWords(context: TriggerContext | Context, lastWord: string): Promise<string[]> {
-  const prompt = `
-    Given the last word "${lastWord}", generate 1-3 diverse connector words.
-    Focus on creating natural, grammatically interesting transitions.
+  // const prompt = `
+  //   Given the last word "${lastWord}", generate 1-3 diverse connector words.
+  //   Focus on creating natural, grammatically interesting transitions.
     
-    CONNECTOR TYPES TO CONSIDER:
-    - Helping verbs that add nuance
-    - Prepositions that create spatial or temporal context
-    - Conjunctions that suggest causality or contrast
-    - Articles that refine the narrative focus
+  //   CONNECTOR TYPES TO CONSIDER:
+  //   - Helping verbs that add nuance
+  //   - Prepositions that create spatial or temporal context
+  //   - Conjunctions that suggest causality or contrast
+  //   - Articles that refine the narrative focus
     
-    STRICT RULES:
-    - NO numbers
-    - NO punctuation
-    - NO list markers
-    - Words must be UPPERCASE
-    - Prioritize variety and narrative flow
-    - Avoid repetitive or generic connectors
-    - Aim to add depth to the story's progression
-  `;
+  //   STRICT RULES:
+  //   - NO numbers
+  //   - NO punctuation
+  //   - NO list markers
+  //   - Words must be UPPERCASE
+  //   - Prioritize variety and narrative flow
+  //   - Avoid repetitive or generic connectors
+  //   - Aim to add depth to the story's progression
+  // `;
 
+  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its your turn, give me a word or two to continue the sentence ${lastWord} 
+  
+  STRICT RULES:
+    - Dont repeat the ${lastWord} in your response
+    - Just give me the words to add to ${lastWord}
+    - Words must be UPPERCASE
+    `
   const connectorWords = await useGemini(context, prompt);
   console.log(connectorWords);  
   // Predefined list of valid connectors
@@ -187,31 +194,104 @@ export async function generateConnectorWords(context: TriggerContext | Context, 
   );
 
   // If no valid connectors found, return a minimal set
-  return processedConnectors.length > 0 
-    ? processedConnectors.slice(0, 3)
-    : ['THE', 'OF', 'AND'].slice(0, 3);
+  // return processedConnectors.length > 0 
+  //   ? processedConnectors.slice(0, 3)
+  //   : ['THE', 'OF', 'AND'].slice(0, 3);
+
+  return connectorWords;
+}
+
+export async function CompleteTheStory(context: TriggerContext | Context, lastWord: string): Promise<string[]> {
+  // const prompt = `
+  //   Given the last word "${lastWord}", generate 1-3 diverse connector words.
+  //   Focus on creating natural, grammatically interesting transitions.
+    
+  //   CONNECTOR TYPES TO CONSIDER:
+  //   - Helping verbs that add nuance
+  //   - Prepositions that create spatial or temporal context
+  //   - Conjunctions that suggest causality or contrast
+  //   - Articles that refine the narrative focus
+    
+  //   STRICT RULES:
+  //   - NO numbers
+  //   - NO punctuation
+  //   - NO list markers
+  //   - Words must be UPPERCASE
+  //   - Prioritize variety and narrative flow
+  //   - Avoid repetitive or generic connectors
+  //   - Aim to add depth to the story's progression
+  // `;
+
+  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its your turn and its final turn so give me a few words to complete the sentence ${lastWord} 
+  
+  STRICT RULES:
+    - Dont repeat the ${lastWord} in your response
+    - Just give me the words to add to ${lastWord} to complete the sentence
+    - Words must be UPPERCASE
+    `
+  const connectorWords = await useGemini(context, prompt);
+  console.log(connectorWords);  
+  // Predefined list of valid connectors
+  const validConnectors = [
+    // Helping Verbs
+    'IS', 'ARE', 'WAS', 'WERE', 'CAN', 'COULD', 'WILL', 'WOULD', 
+    'SHALL', 'SHOULD', 'MAY', 'MIGHT', 'MUST', 'HAVE', 'HAS', 'HAD',
+    
+    // Articles
+    'THE', 'A', 'AN', 
+
+    // Prepositions
+    'OF', 'WITH', 'IN', 'ON', 'AT', 'TO', 'FOR', 'BY', 'FROM', 
+    'UNDER', 'OVER', 'THROUGH', 'ACROSS', 'BETWEEN', 'AMONG',
+    
+    // Conjunctions
+    'AND', 'BUT', 'OR', 'YET', 'SO', 'BECAUSE', 'WHILE', 'SINCE'
+  ];
+
+  // Filter and validate connector words
+  const processedConnectors = connectorWords.filter((word: string) => 
+    validConnectors.includes(word)
+  );
+
+  // If no valid connectors found, return a minimal set
+  // return processedConnectors.length > 0 
+  //   ? processedConnectors.slice(0, 3)
+  //   : ['THE', 'OF', 'AND'].slice(0, 3);
+
+  return connectorWords;
 }
 
 export async function generateFollowUpWords(context: TriggerContext | Context, currentStory: string): Promise<string[]> {
-  const prompt = `
-    Given the current story context: "${currentStory}",
-    generate 10 unique, engaging words to continue the narrative.
+  // const prompt = `
+  //   Given the current story context: "${currentStory}",
+  //   generate 10 unique, engaging words to continue the narrative.
     
+  //   STRICT RULES:
+  //   - NO numbers
+  //   - NO punctuation
+  //   - NO list markers
+  //   - Words must be UPPERCASE
+  //   - Include diverse word types: nouns, verbs, adjectives
+  //   - Consider story context and potential narrative directions
+  // `;
+
+  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its my turn, give me a exactly 10 word to choose from to continue the sentence, make sure to give me words with each one leading to potentially different scenarios  ${currentStory}
     STRICT RULES:
     - NO numbers
     - NO punctuation
     - NO list markers
     - Words must be UPPERCASE
-    - Include diverse word types: nouns, verbs, adjectives
-    - Consider story context and potential narrative directions
-  `;
-
+  `
   const followUpWords = await useGemini(context, prompt);
   
   const usedWords = currentStory.toUpperCase().split(' ');
+  // const uniqueFollowUpWords = followUpWords.filter((word: string) => 
+  //   !usedWords.includes(word) && word.length >= 2
+  // );
   const uniqueFollowUpWords = followUpWords.filter((word: string) => 
-    !usedWords.includes(word) && word.length >= 2
+    word.length >= 1
   );
+
   
   const fallbackWords = [
     "ADVENTURE", "MYSTERY", "COURAGE", "DREAM", "JOURNEY", 
@@ -223,7 +303,10 @@ export async function generateFollowUpWords(context: TriggerContext | Context, c
     .filter(word => !usedWords.includes(word))
     .slice(0, 10);
 
-  return combinedWords.length > 0 
-    ? uniqueFollowUpWords 
-    : fallbackWords.slice(0, 10);
+  // return combinedWords.length > 0 
+  //   ? uniqueFollowUpWords 
+  //   : fallbackWords.slice(0, 10);
+
+  return uniqueFollowUpWords;
+
 }
