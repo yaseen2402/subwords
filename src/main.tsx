@@ -5,7 +5,8 @@ import {
   fetchRecentPostTitles, 
   generateWordsFromTitles, 
   generateFollowUpWords,
-  generateConnectorWords
+  generateConnectorWords,
+  CompleteTheStory,
 } from '../server/fetchRecentPosts.js';
 
 const MAX_JOBS = 10;
@@ -147,6 +148,8 @@ Devvit.addSchedulerJob({
         
         // Ensure game round is initialized to 1 if not set
         const currentRound = parseInt(await context.redis.get(gameRoundKey) || '1');
+
+
         const newRound = currentRound + 1;
         await context.redis.set(gameRoundKey, newRound.toString());
         
@@ -160,9 +163,21 @@ Devvit.addSchedulerJob({
 
         // Check if max rounds reached
         if (newRound >= MAX_ROUNDS) {
-          
+          const upperMostVotedWord = mostVotedWord.toUpperCase();
+        // const connectorWords = await generateConnectorWords(context, upperMostVotedWord);
+        const connectorWords = await CompleteTheStory(context, initialStory);
+        console.log(`final story words received from ai are: ${connectorWords}`)
+        
+        const expandedWord = connectorWords.length > 0 
+          ? `${upperMostVotedWord} ${connectorWords.join(' ')}`.trim()
+          : upperMostVotedWord;
+
+        
+        
+        // Update story with expanded word
+        const expandedStory = `${currentStory} ${expandedWord}`.trim();
           // Prepare final story with title
-          const finalStory = currentStory;
+          const finalStory = expandedStory;
           
           await context.redis.set(`subwords_${postId}_story`, finalStory);
           await context.redis.set(`subwords_${postId}_game_status`, 'GAME_OVER');
@@ -199,12 +214,15 @@ Devvit.addSchedulerJob({
 
         // Generate connectors for the most voted word
         const upperMostVotedWord = mostVotedWord.toUpperCase();
-        const connectorWords = await generateConnectorWords(context, upperMostVotedWord);
+        // const connectorWords = await generateConnectorWords(context, upperMostVotedWord);
+        const connectorWords = await generateConnectorWords(context, initialStory);
+        console.log(`connectors words received from ai are: ${connectorWords}`)
         
-        // Append connectors to the most voted word
         const expandedWord = connectorWords.length > 0 
           ? `${upperMostVotedWord} ${connectorWords.join(' ')}`.trim()
           : upperMostVotedWord;
+
+        
         
         // Update story with expanded word
         const expandedStory = `${currentStory} ${expandedWord}`.trim();
