@@ -74,7 +74,7 @@ class WordGuesserGame {
 
           if (message.type === "voteStatus") {
             const { canVote } = message.data;
-            console.log("vote status sent bu devvit:",canVote)
+            console.log("vote status sent by devvit:",canVote)
             this.canVote = canVote;
 
 
