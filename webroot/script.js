@@ -147,7 +147,8 @@ class WordGuesserGame {
 
   // Create the grid of words
   createGrid() {
-    this.gridContainer.innerHTML = ''; 
+    const gridContainer = document.getElementById("grid");
+    gridContainer.innerHTML = '';  
 
     this.words.forEach((word, index) => {
         const cell = document.createElement("div");
@@ -160,31 +161,75 @@ class WordGuesserGame {
         playerCountEl.classList.add("cell-players");
         cell.appendChild(playerCountEl);
 
+
         cell.style.opacity = "0";
         cell.style.transform = "scale(0.9)";
         setTimeout(() => {
             cell.style.transition = "opacity 0.3s ease, transform 0.3s ease";
             cell.style.opacity = "1";
             cell.style.transform = "scale(1)";
-        }, index * 100);
+        }, index * 100);  
 
-        this.gridContainer.appendChild(cell);
+        gridContainer.appendChild(cell);
     });
+} 
+
+
+updateTextField(data) {
+  console.log("Updating text field with latest story", data);
+  if (data && (data.expandedWord || data.word)) {
+      const wordToDisplay = data.expandedWord || data.word;
+
+      // Display the most voted word
+      const overlay = document.createElement("div");
+      overlay.id = "word-overlay";
+      overlay.style = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.8);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+          backdrop-filter: blur(8px);
+          transition: opacity 0.5s ease-in-out;
+      `;
+
+      const wordElement = document.createElement("div");
+      wordElement.style = `
+          color: white;
+          font-size: 3rem;
+          font-family: 'ArcadeClassic', sans-serif;
+          text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6);
+          animation: fadeInZoom 1s ease-in-out;
+      `;
+      wordElement.innerText = wordToDisplay;
+
+      overlay.appendChild(wordElement);
+      document.body.appendChild(overlay);
+
+      // append after 3s
+      setTimeout(() => {
+          overlay.style.opacity = "0";
+          setTimeout(() => document.body.removeChild(overlay), 500);
+
+          
+          const storyElement = this.storyElement;
+          const animatedWord = document.createElement("span");
+          animatedWord.style = `
+              opacity: 0;
+              display: inline-block;
+              animation: fadeInMove 1s forwards;
+          `;
+          animatedWord.innerText = ` ${wordToDisplay}`;
+          storyElement.appendChild(animatedWord);
+      }, 3000);
+  }
 }
 
-
-  updateTextField(data) {
-    console.log("Updating text field with latest story", data);
-    if (data && (data.expandedWord || data.word)) {
-      // Prefer expandedWord, fallback to word
-      const wordToAppend = data.expandedWord || data.word;
-      
-      // Append the full word to the story
-      const currentStory = this.storyElement.innerText;
-      const updatedStory = `${currentStory} ${wordToAppend}`.trim();
-      this.storyElement.innerText = updatedStory;
-    }
-  }
   updateGridFromGameState() {
     console.log('Updating grid with cells:', JSON.stringify(this.currentCells));
     
@@ -231,14 +276,15 @@ class WordGuesserGame {
             let color;
             
             if (word === 'END STORY') {
-                color = '#FF6347'; // Tomato red for End Story cell
-            } else if (userCount <= 2) {
-                color = '#90EE90'; // Light green
-            } else if (userCount <= 5) {
-                color = '#32CD32'; // Medium green
-            } else {
-                color = '#40c632'; // Dark green
-            }
+              color = '#FF6347'; // Tomato red for End Story cell
+          } else if (userCount <= 2) {
+              color = '#381A96'; 
+          } else if (userCount <= 5) {
+              color = '#381A96'; 
+          } else {
+              color = '#381A96'; 
+          }
+          
             
             cell.style.backgroundColor = color;
             cell.dataset.userCount = userCount.toString();
@@ -277,82 +323,152 @@ class WordGuesserGame {
     const storyCompletedOverlay = document.createElement('div');
     storyCompletedOverlay.id = 'story-completed-overlay';
     storyCompletedOverlay.innerHTML = `
-      <div class="story-completed-content">
+      <div class="story-completed-container">
         <h1>Final Story: A Collaborative Journey</h1>
-        <div id="final-story-text" style="white-space: pre-wrap; text-align: left; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4; border-radius: 10px;"></div>
+        <div id="final-story-text" class="final-story-text"></div>
         <button id="restart-game">Play Again</button>
       </div>
     `;
     
-    // Style the overlay
+    // Style the overlay 
     storyCompletedOverlay.style.position = 'fixed';
     storyCompletedOverlay.style.top = '0';
     storyCompletedOverlay.style.left = '0';
     storyCompletedOverlay.style.width = '100%';
     storyCompletedOverlay.style.height = '100%';
-    storyCompletedOverlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    storyCompletedOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
     storyCompletedOverlay.style.display = 'flex';
     storyCompletedOverlay.style.justifyContent = 'center';
     storyCompletedOverlay.style.alignItems = 'center';
     storyCompletedOverlay.style.zIndex = '1000';
-    
+    storyCompletedOverlay.style.filter = 'blur(10px)'; 
+    storyCompletedOverlay.style.transition = 'filter 0.3s ease-in-out';
+
     // Add to body
     document.body.appendChild(storyCompletedOverlay);
     
-    // Set final story text with better formatting
+    // Set final story text 
     const finalStoryText = this.storyElement.innerText;
     document.getElementById('final-story-text').textContent = finalStoryText;
     
+    
+    setTimeout(() => {
+        storyCompletedOverlay.style.filter = 'none'; 
+    }, 300); 
+
     // Add restart game listener
     document.getElementById('restart-game').addEventListener('click', () => {
-      // Notify parent to restart the game
-      window.parent?.postMessage({
-        type: 'restartGame'
-      }, '*');
+        // Notify parent to restart the game
+        window.parent?.postMessage({
+            type: 'restartGame'
+        }, '*');
     });
+}
+
+updateGameRoundDisplay() {
+  // define totalRounds 
+  if (!this.totalRounds) {
+      this.totalRounds = 15; 
   }
 
-  updateGameRoundDisplay() {
-    // Create or update game round display
-    let gameRoundEl = document.getElementById('game-round');
-    if (!gameRoundEl) {
+  // Create or update game round display
+  let gameRoundEl = document.getElementById('game-round');
+  if (!gameRoundEl) {
       gameRoundEl = document.createElement('div');
       gameRoundEl.id = 'game-round';
       gameRoundEl.classList.add('game-round');
+
+      // Add SVG for circular progress
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "circle");
+      svg.setAttribute("viewBox", "0 0 36 36");
+
+      const track = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      track.setAttribute("class", "track");
+      track.setAttribute("cx", "18");
+      track.setAttribute("cy", "18");
+      track.setAttribute("r", "16");
+
+      const progress = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      progress.setAttribute("class", "progress");
+      progress.setAttribute("cx", "18");
+      progress.setAttribute("cy", "18");
+      progress.setAttribute("r", "16");
+      progress.setAttribute("style", "stroke-dasharray: 100; stroke-dashoffset: 100;");
+
+      svg.appendChild(track);
+      svg.appendChild(progress);
+      gameRoundEl.appendChild(svg);
+
+      // Add text display for round
+      const textEl = document.createElement("div");
+      textEl.classList.add("text");
+      textEl.textContent = `${this.gameRound} / ${this.totalRounds}`;
+      gameRoundEl.appendChild(textEl);
+
       document.getElementById('game-container').prepend(gameRoundEl);
-    }
-    console.log('Updating game round display:', this.gameRound);
-    gameRoundEl.textContent = `Round: ${this.gameRound}`;
   }
+
+  // Update round display text
+  const textEl = gameRoundEl.querySelector(".text");
+  textEl.textContent = ` ${this.gameRound}`;
+
+  // Update circular progress bar
+  const progressCircle = gameRoundEl.querySelector(".progress");
+  const progressPercentage = (this.gameRound / this.totalRounds) * 100;
+  const strokeDasharray = 100; 
+  const strokeDashoffset = strokeDasharray - progressPercentage;
+
+  progressCircle.style.strokeDasharray = strokeDasharray;
+  progressCircle.style.strokeDashoffset = strokeDashoffset;
+
+  console.log('game round display:', `Round: ${this.gameRound} / ${this.totalRounds}`, `Progress per: ${progressPercentage}%`);
+}
+
+
 
   startCountdownTimer(seconds = 30) {
     // Clear any existing interval
     if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
+        clearInterval(this.countdownInterval);
     }
 
     // Reset timer color to default
-    this.countdownElement.style.color = '#ff4500';
+    this.countdownElement.style.color = '#0C004D';
+
+    // Convert total seconds into minutes and seconds
+    let minutes = Math.floor(seconds / 60);
+    let remainingSeconds = seconds % 60;
+
+    // Format the timer 
+    const formatTime = (min, sec) => {
+        return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    };
 
     // Set initial time
-    this.countdownElement.textContent = seconds;
+    this.countdownElement.textContent = formatTime(minutes, remainingSeconds);
 
     this.countdownInterval = setInterval(() => {
-      seconds--;
-      this.countdownElement.textContent = seconds;
+        seconds--;
+        minutes = Math.floor(seconds / 60);
+        remainingSeconds = seconds % 60;
 
-      // Change color as time gets low
-      if (seconds <= 10) {
-        this.countdownElement.style.color = '#ff0000'; // Red
-      }
+        // Update the timer display
+        this.countdownElement.textContent = formatTime(minutes, remainingSeconds);
 
-      if (seconds <= 0) {
-        clearInterval(this.countdownInterval);
-        this.countdownElement.textContent = '0';
-        this.countdownElement.style.color = '#ff0000'; // Ensure red
-      }
+        // Change color as time gets low
+        if (seconds <= 10) {
+            this.countdownElement.style.color = '#ff0000'; // Red
+        }
+
+        if (seconds <= 0) {
+            clearInterval(this.countdownInterval);
+            this.countdownElement.textContent = '00:00';
+            this.countdownElement.style.color = '#ff0000'; // Ensure red
+        }
     }, 1000);
-  }
+}
+
 
   showGameOverScreen() {
     // Create a game over overlay
@@ -390,35 +506,30 @@ class WordGuesserGame {
   addEventListeners() {
     let selectedCell = null;
 
+    // Track the cell clicked for selection 
     this.gridContainer.addEventListener("click", (event) => {
       const cell = event.target.closest(".cell");
 
-      // Always allow cell selection before confirm button
+      // Always allow cell selection before the select button is clicked
       if (cell) {
         // Deselect previous cell if exists
         if (selectedCell) {
           selectedCell.classList.remove("selected");
         }
 
-        // Select new cell
-        cell.classList.add("selected");
+        cell.classList.add("selected"); 
         selectedCell = cell;
-        
-        // Add a ripple effect
-        const ripple = document.createElement("div");
-        ripple.classList.add("ripple");
-        cell.appendChild(ripple);
-        
-        // Remove ripple after animation
-        setTimeout(() => {
-          ripple.remove();
-        }, 1000);
       }
     });
 
-    document.getElementById("checkAnswer").addEventListener("click", () => {
+    // When the "select" button is clicked, trigger anim
+    document.getElementById("confirm").addEventListener("click", () => {
       try {
-        // Get all selected cells
+        if (selectedCell) {
+          selectedCell.classList.add("neonGlow");
+        }
+
+        
         const selectedCells = Array.from(document.querySelectorAll(".cell.selected"))
           .map(cell => cell.dataset.word)
           .filter(Boolean);
@@ -433,17 +544,15 @@ class WordGuesserGame {
             session: Math.random().toString(36).substring(2) // Generate a unique session ID
           }
         }, '*');
-        
-        // Vote for selected words
+
         selectedCells.forEach(word => {
           window.parent?.postMessage({
             type: 'voteWord',
             data: { word }
           }, '*');
         });
-        
+
         // Start 30-second timer after confirm
-        let lastSelectedTime = Date.now();
         setTimeout(() => {
           // Clear selections after 30 seconds
           document.querySelectorAll(".cell.selected").forEach(cell => {
@@ -455,9 +564,8 @@ class WordGuesserGame {
         console.error('Error processing selection:', error);
       }
     });
-
-
   }
+
 
   arraysMatch(arr1, arr2) {
     if (arr1.length !== arr2.length) return false;

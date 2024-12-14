@@ -9,19 +9,26 @@
 <body>
     <div id="game-container" class="substory-theme">
         <header class="game-header">
-            <div id="game-round-container">
-                <span id="game-round" class="game-round">Round: 1</span>
-                <span id="countdown-timer" class="countdown-timer">30</span>
+            <div id="game-round" class="game-round">
+                <svg class="circle" viewBox="0 0 36 36">
+                    <circle class="track" cx="18" cy="18" r="16"></circle>
+                    <circle class="progress" cx="18" cy="18" r="16" style="stroke-dasharray: 100; stroke-dashoffset: 100;"></circle>
+                </svg>
+                <div class="text">1</div>
+            </div>
+            <div id="timer-container" class="timer-container">
+                <img src="../assets/timer-icon.png" class="timer-icon" />
+                <span id="countdown-timer" class="countdown-timer">00:30</span>
             </div>
         </header>
 
         <main class="story-section">
             <p id="story"></p>
-            <div id="grid"></div>
+            <div id="grid" class="word-grid"></div>
         </main>
 
         <footer class="action-section">
-            <button id="confirm">Confirm Selection</button>
+            <button id="confirm">Select</button>
         </footer>
     </div>
 
