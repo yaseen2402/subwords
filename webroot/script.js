@@ -97,15 +97,6 @@ class WordGuesserGame {
           }
 
           if (message.type === "updateGameRound") {
-            window.parent?.postMessage(
-              {
-                type: "resetCanVote",
-                data: {
-                  no: "no data needed"
-                },
-              },
-              "*"
-            );
             console.log("Received game round update:", message);
             // Parse the stringified data
             const { currentRound } = message.data || {};
@@ -134,6 +125,15 @@ class WordGuesserGame {
 
           if (message.type === "updateTextField") {
             console.log("Received story update message", message.data);
+            window.parent?.postMessage(
+              {
+                type: "resetCanVote",
+                data: {
+                  no: "no data needed"
+                },
+              },
+              "*"
+            );
             this.updateTextField(message.data);
           }
         }

@@ -11,7 +11,7 @@ import {
 const MAX_JOBS = 10;
 const JOB_LIST_KEY = 'active_job_list';
 const MAX_STORY_WORDS = 15;  // Maximum number of words in the story before game ends
-const MAX_ROUNDS = 3
+const MAX_ROUNDS = 4
 
 type WordData = {
   word: string;
@@ -596,7 +596,10 @@ Devvit.addCustomPostType({
     const onMessage = async (msg: any) => {
       switch (msg.type) {
         case 'btnTrigger':
+          try{
+          console.log("entered button trigger condition in devvit")
           const canVote = await context.redis.get(`subwords_${context.postId}_${username}_canVote`) || '';
+
           await context.redis.set(`subwords_${context.postId}_${username}_canVote`, "false");
           console.log(`changed the value of  canVote to false for ${username} after button triger`);
 
@@ -606,6 +609,9 @@ Devvit.addCustomPostType({
               canVote: canVote
             }
           });
+        }catch(error) {
+          console.error('errro inside devvit btnTriger code', error);
+        }
 
           break;
         case 'restartGame':
