@@ -939,15 +939,16 @@ Devvit.addCustomPostType({
           },
         });
       }
+      const fontUrl = await context.assets.getURL('your-google-font.woff2');
     };
-
     return (
-      <vstack grow padding="small">
+      <vstack grow padding="small" >
         <vstack
           grow={!webviewVisible}
           height={webviewVisible ? "0%" : "100%"}
           alignment="middle center"
         >
+        <image url="substory.png" imageWidth={100} imageHeight={100} />
           <text size="xlarge" weight="bold">
             SubWords
           </text>
