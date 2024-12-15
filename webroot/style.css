@@ -127,13 +127,51 @@ button:hover::after {
 
 #story {
   font-weight: bold;
-  color: #2196f3;
-  font-size: 16px;
-  padding: 5px;
-  background: #e3f2fd;
-  border-radius: 8px;
-  margin: 5px;
-  min-height: 50px;
+  color: #ffffff;
+  font-size: 18px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(26, 42, 108, 0.9), rgba(178, 31, 31, 0.9));
+  border-radius: 15px;
+  margin: 15px;
+  min-height: 80px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  border: 2px solid rgba(253, 187, 45, 0.5);
+  line-height: 1.6;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+#story::before {
+  content: '📖 Story Progress:';
+  display: block;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #fdbb2d;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+#story:empty::after {
+  content: 'Your story will appear here...';
+  color: rgba(255,255,255,0.6);
+  font-style: italic;
+}
+
+#story span {
+  display: inline-block;
+  padding: 2px 4px;
+  border-radius: 4px;
+  margin: 0 2px;
+  background: rgba(253, 187, 45, 0.1);
+  transition: all 0.3s ease;
+}
+
+#story span:hover {
+  background: rgba(253, 187, 45, 0.2);
+  transform: scale(1.05);
 }
 
 .game-round {
@@ -251,6 +289,30 @@ button:hover::after {
 @keyframes starTwinkle {
   0% { opacity: 0.5; transform: scale(0.9); }
   100% { opacity: 1; transform: scale(1.1); }
+}
+
+.story-container {
+  width: 100%;
+  padding: 10px;
+  position: relative;
+}
+
+.story-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(253, 187, 45, 0.1), rgba(178, 31, 31, 0.1));
+  border-radius: 20px;
+  z-index: -1;
+  animation: containerGlow 3s infinite alternate;
+}
+
+@keyframes containerGlow {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
 @keyframes badgePulse {
