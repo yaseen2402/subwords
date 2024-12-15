@@ -738,7 +738,6 @@ Devvit.addCustomPostType({
             }
           );
 
-          
           // Notify webview with new game state
           context.ui.webView.postMessage("myWebView", {
             type: "initialData",
@@ -747,7 +746,7 @@ Devvit.addCustomPostType({
               currentCells: cellsWithCounts,
               story: "",
               gameRound: 1,
-              timeRemaining: 30, 
+              timeRemaining: 30,
             },
           });
           break;
@@ -958,10 +957,10 @@ Devvit.addCustomPostType({
           (await context.redis.get(gameRoundKey)) || "1"
         );
         const fontUrl = await context.assets.getURL("ARCADECLASSIC.TTF");
-        console.log("font url is: ", fontUrl)
+        console.log("font url is: ", fontUrl);
 
-        const timerUrl = await context.assets.getURL("timer-icon.png");
-        console.log("bg url is: ", timerUrl)
+        const timerUrl = await context.assets.getURL("timergif.gif");
+        console.log("bg url is: ", timerUrl);
         context.ui.webView.postMessage("myWebView", {
           type: "initialData",
           data: {
@@ -971,11 +970,10 @@ Devvit.addCustomPostType({
             gameRound: currentRound,
             timeRemaining: 30, // Add time remaining
             fontUrl: fontUrl,
-            timerUrl: timerUrl
+            timerUrl: timerUrl,
           },
         });
       }
-      
     };
     return (
       <vstack grow padding="small">
@@ -993,7 +991,7 @@ Devvit.addCustomPostType({
               height="100%"
             />
             <vstack alignment="middle center" width="100%" height="100%">
-            <spacer height="60%"/>
+              <spacer height="60%" />
               <button
                 onPress={onStartGame}
                 appearance="primary"
