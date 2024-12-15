@@ -507,7 +507,16 @@ class WordGuesserGame {
           .map((cell) => cell.dataset.word)
           .filter(Boolean);
 
-        if (selectedCells.length === 0) return;
+        // Check if no cell is selected
+        if (selectedCells.length === 0) {
+          const toast = document.getElementById('toast');
+          toast.textContent = "Please select a word first";
+          toast.classList.add('show');
+          setTimeout(() => {
+            toast.classList.remove('show');
+          }, 2500);
+          return;
+        }
 
         // Notify Devvit to sync state with ONLY the newly selected cells
         window.parent?.postMessage(
