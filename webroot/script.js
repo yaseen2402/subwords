@@ -243,6 +243,7 @@ class WordGuesserGame {
       wordSpan.style.fontFamily = this.fontUrl || "sans-serif";
       
       this.storyElement.appendChild(wordSpan);
+      this.sto
       
       // Trigger animation
       setTimeout(() => {
@@ -286,11 +287,6 @@ class WordGuesserGame {
       typeof cell === "string" ? cell : cell.word
     );
 
-    // Check for story completion
-    if (this.words.includes("END STORY")) {
-      this.showStoryCompletedScreen();
-      return;
-    }
 
     this.createGrid();
 
@@ -308,8 +304,8 @@ class WordGuesserGame {
 
         let color;
 
-        if (word === "END STORY") {
-          color = "#FF6347"; // Tomato red for End Story cell
+        if (userCount == 0) {
+          color = "#FFFFFF"; // Tomato red for End Story cell
         } else if (userCount <= 2) {
           color = "#90EE90"; // Light green
         } else if (userCount <= 5) {
@@ -335,24 +331,6 @@ class WordGuesserGame {
     //   cells: this.currentCells,
     // });
   }
-
-  // // Synchronize countdown timer across all clients
-  // syncCountdownTimer(seconds) {
-  //   // Broadcast timer start to all clients
-  //   window.parent?.postMessage(
-  //     {
-  //       type: "syncTimer",
-  //       data: {
-  //         seconds: seconds,
-  //         timestamp: Date.now(),
-  //       },
-  //     },
-  //     "*"
-  //   );
-
-  //   // Start local timer
-  //   this.startCountdownTimer(seconds);
-  // }
 
   showStoryCompletedScreen() {
     const storyCompletedOverlay = document.createElement("div");
