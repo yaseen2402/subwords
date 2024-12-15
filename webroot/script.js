@@ -473,7 +473,9 @@ class WordGuesserGame {
     });
 
     document.getElementById("confirm").addEventListener("click", async () => {
+      const confirmButton = document.getElementById("confirm");
       try {
+        confirmButton.disabled = true;
         const selectedCells = Array.from(
           document.querySelectorAll(".cell.selected")
         )
@@ -543,6 +545,9 @@ class WordGuesserGame {
 
       } catch (error) {
         console.error("Error processing selection:", error);
+      }finally {
+        // Ensure the button is always re-enabled, even in case of errors or early returns
+        confirmButton.disabled = false;
       }
     });
   }
