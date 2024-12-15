@@ -189,12 +189,15 @@ class WordGuesserGame {
     logo.style.height = "35px";
     logo.style.filter = "drop-shadow(2px 2px 4px rgba(0,0,0,0.3))";
     
+    // Limit to 8 words
+    const displayWords = this.words.slice(0, 8);
+    
     document.body.style.backgroundSize = "400% 400%";
     document.body.style.backgroundRepeat = "no-repeat";
     document.body.style.backgroundPosition = "center";
     document.body.style.animation = "gradientBG 15s ease infinite";
 
-    this.words.forEach((word, index) => {
+    displayWords.forEach((word, index) => {
       const cell = document.createElement("div");
       cell.classList.add("cell");
       
