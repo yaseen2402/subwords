@@ -185,19 +185,37 @@ class WordGuesserGame {
     this.gridContainer.innerHTML = "";
     const logo = document.getElementById("timer-logo");
     logo.src = this.timerUrl;
-    logo.style.width = "30px";
-    logo.style.height = "30px";
-    document.body.style.backgroundSize = "cover"; // Adjust to make the image cover the entire background
-    document.body.style.backgroundRepeat = "no-repeat"; // Prevent tiling
-    document.body.style.backgroundPosition = "center"; // Center the image
-
+    logo.style.width = "35px";
+    logo.style.height = "35px";
+    logo.style.filter = "drop-shadow(2px 2px 4px rgba(0,0,0,0.3))";
+    
+    document.body.style.backgroundSize = "400% 400%";
+    document.body.style.backgroundRepeat = "no-repeat";
+    document.body.style.backgroundPosition = "center";
+    document.body.style.animation = "gradientBG 15s ease infinite";
 
     this.words.forEach((word, index) => {
       const cell = document.createElement("div");
       cell.classList.add("cell");
-      cell.innerText = word;
+      
+      // Create word container
+      const wordSpan = document.createElement("span");
+      wordSpan.textContent = word;
+      wordSpan.style.position = "relative";
+      wordSpan.style.zIndex = "1";
+      
+      cell.appendChild(wordSpan);
       cell.dataset.word = word;
       cell.dataset.id = index + 1;
+
+      // Add hover effect
+      cell.addEventListener('mouseover', () => {
+        cell.style.transform = `translateY(-5px) scale(1.02) rotate(${Math.random() * 2 - 1}deg)`;
+      });
+      
+      cell.addEventListener('mouseout', () => {
+        cell.style.transform = 'translateY(0) scale(1) rotate(0deg)';
+      });
 
       const playerCountEl = document.createElement("div");
       playerCountEl.classList.add("cell-players");
@@ -210,15 +228,49 @@ class WordGuesserGame {
   updateTextField(data) {
     console.log("Updating text field with latest story", data);
     if (data && (data.expandedWord || data.word)) {
-      // Prefer expandedWord, fallback to word
       const wordToAppend = data.expandedWord || data.word;
-      console.log("font Url is ", this.fontUrl)
-      // Append the full word to the story
-      this.storyElement.style.fontFamily = this.fontUrl, "sans-serif";
-      const currentStory = this.storyElement.innerText;
-      const updatedStory = `${currentStory} ${wordToAppend}`.trim();
-      this.storyElement.innerText = updatedStory;
+      
+      // Create a new span for the word with animation
+      const wordSpan = document.createElement("span");
+      wordSpan.textContent = ` ${wordToAppend}`;
+      wordSpan.style.opacity = "0";
+      wordSpan.style.transform = "translateY(20px)";
+      wordSpan.style.transition = "all 0.5s ease";
+      wordSpan.style.display = "inline-block";
+      wordSpan.style.fontFamily = this.fontUrl || "sans-serif";
+      
+      this.storyElement.appendChild(wordSpan);
+      
+      // Trigger animation
+      setTimeout(() => {
+        wordSpan.style.opacity = "1";
+        wordSpan.style.transform = "translateY(0)";
+      }, 50);
+
+      // Add sparkle effect
+      this.addSparkleEffect(wordSpan);
     }
+  }
+
+  addSparkleEffect(element) {
+    const sparkle = document.createElement("div");
+    sparkle.style.position = "absolute";
+    sparkle.style.width = "100%";
+    sparkle.style.height = "100%";
+    sparkle.style.pointerEvents = "none";
+    sparkle.style.background = "radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%)";
+    sparkle.style.opacity = "0";
+    sparkle.style.transition = "opacity 0.3s ease";
+    
+    element.appendChild(sparkle);
+    
+    setTimeout(() => {
+      sparkle.style.opacity = "0.5";
+      setTimeout(() => {
+        sparkle.style.opacity = "0";
+        setTimeout(() => sparkle.remove(), 300);
+      }, 300);
+    }, 50);
   }
   updateGridFromGameState() {
     console.log("Updating grid with cells:", JSON.stringify(this.currentCells));
@@ -300,35 +352,66 @@ class WordGuesserGame {
   }
 
   showStoryCompletedScreen() {
-    // Create a story completed overlay
     const storyCompletedOverlay = document.createElement("div");
     storyCompletedOverlay.id = "story-completed-overlay";
     storyCompletedOverlay.innerHTML = `
       <div class="story-completed-content">
-        <h1>Final Story</h1>
-        <div id="final-story-text" style="white-space: pre-wrap; text-align: left; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4; border-radius: 10px;"></div>
+        <div class="completion-header">
+          <h1>🎉 Story Complete! 🎉</h1>
+          <div class="completion-stars">
+            ⭐⭐⭐⭐⭐
+          </div>
+        </div>
+        <div class="scroll-container">
+          <div id="final-story-text" class="final-story"></div>
+        </div>
+        <div class="completion-footer">
+          <span class="completion-badge">Story Master Achievement Unlocked!</span>
+        </div>
       </div>
     `;
 
-    // Style the overlay
-    storyCompletedOverlay.style.position = "fixed";
-    storyCompletedOverlay.style.top = "0";
-    storyCompletedOverlay.style.left = "0";
-    storyCompletedOverlay.style.width = "100%";
-    storyCompletedOverlay.style.height = "100%";
-    storyCompletedOverlay.style.backgroundColor = "rgba(0,0,0,0.7)";
-    storyCompletedOverlay.style.display = "flex";
-    storyCompletedOverlay.style.justifyContent = "center";
-    storyCompletedOverlay.style.alignItems = "center";
-    storyCompletedOverlay.style.zIndex = "1000";
+    // Style the overlay with animation
+    Object.assign(storyCompletedOverlay.style, {
+      position: "fixed",
+      top: "0",
+      left: "0",
+      width: "100%",
+      height: "100%",
+      backgroundColor: "rgba(0,0,0,0.85)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: "1000",
+      opacity: "0",
+      transition: "opacity 0.5s ease"
+    });
 
-    // Add to body
+    // Add to body and animate in
     document.body.appendChild(storyCompletedOverlay);
+    requestAnimationFrame(() => {
+      storyCompletedOverlay.style.opacity = "1";
+    });
 
-    // Set final story text with better formatting
+    // Set final story text with animation
     const finalStoryText = this.storyElement.innerText;
-    document.getElementById("final-story-text").textContent = finalStoryText;
+    const finalStoryElement = document.getElementById("final-story-text");
     
+    // Animate each word
+    finalStoryText.split(" ").forEach((word, index) => {
+      const wordSpan = document.createElement("span");
+      wordSpan.textContent = word + " ";
+      wordSpan.style.opacity = "0";
+      wordSpan.style.transform = "translateY(20px)";
+      wordSpan.style.transition = "all 0.5s ease";
+      wordSpan.style.transitionDelay = `${index * 0.1}s`;
+      finalStoryElement.appendChild(wordSpan);
+      
+      setTimeout(() => {
+        wordSpan.style.opacity = "1";
+        wordSpan.style.transform = "translateY(0)";
+      }, 100 + index * 100);
+    });
   }
 
   updateGameRoundDisplay() {
