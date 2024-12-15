@@ -984,7 +984,7 @@ Devvit.addCustomPostType({
         >
           <zstack width="100%" height="100%">
             <image
-              url="substory.png"
+              url="bgsubstory.png"
               imageWidth={100}
               imageHeight={100}
               width="100%"
