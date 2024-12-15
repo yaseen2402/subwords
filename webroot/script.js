@@ -509,7 +509,13 @@ class WordGuesserGame {
         await this.voteStatusPromise;
 
         if (this.canVote === "false"){
-          console.log("canVote is false, u cannot vote in this round anymore")
+          console.log("canVote is false, u cannot vote in this round anymore");
+          const toast = document.getElementById('toast');
+          toast.textContent = "You can only vote once per round";
+          toast.classList.add('show');
+          setTimeout(() => {
+            toast.classList.remove('show');
+          }, 2500);
           return;
         }
         const selectedCells = Array.from(
