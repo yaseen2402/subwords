@@ -14,6 +14,7 @@ class WordGuesserGame {
     this.canVote = ""
     this.fontUrl = ""
     this.timerUrl = ""
+    this.subreddit = ""
     this.channel = new BroadcastChannel("game_updates");
 
     this.initGame();
@@ -40,20 +41,22 @@ class WordGuesserGame {
           console.log("going inside the nested message", message.data);
 
           if (message.type === "initialData") {
-            const { username, currentCells, story, gameRound, fontUrl, timerUrl } = message.data;
+            const { username, currentCells, story, gameRound, fontUrl, timerUrl, subreddit } = message.data;
             console.log("Initial data:", {
               username,
               currentCells,
               story,
               gameRound,
               fontUrl,
-              timerUrl
+              timerUrl,
+              subreddit,
             });
             this.username = username;
             this.currentCells = currentCells || [];
             this.gameRound = gameRound || 1;
             this.fontUrl = fontUrl
             this.timerUrl = timerUrl
+            this.subreddit = subreddit
 
             // Set words from currentCells before creating grid
             this.words = this.currentCells.map((cell) => cell.word);
