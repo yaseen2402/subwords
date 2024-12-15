@@ -1,6 +1,6 @@
 import "./createPost.js";
 
-import { Devvit, useState, useChannel } from "@devvit/public-api";
+import { Devvit, useState, useChannel, Subreddit } from "@devvit/public-api";
 import {
   fetchRecentPostTitles,
   generateWordsFromTitles,
@@ -29,6 +29,7 @@ type WebViewMessage =
         timeRemaining: number;
         fontUrl: string;
         timerUrl: string;
+        subreddit: string;
       };
     }
   | {
@@ -436,6 +437,17 @@ Devvit.addCustomPostType({
       return currUser?.username ?? "anon";
     });
 
+    const [status] = useState(async () => {
+      const currStatus = await context.redis.get(
+        `subwords_${context.postId}_game_status`
+      );
+      return currStatus ?? "inGame";
+    });
+    const subreddits = ["funny", "news", "history", "interestingasfuck"];
+
+    // Select a random word
+    const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
+
     // Initialize game state from Redis
     const [cells, setCells] = useState(async () => {
       const redisCells =
@@ -504,11 +516,11 @@ Devvit.addCustomPostType({
 
       // If no words, generate dynamically
       try {
-        const subreddits = ["funny", "news", "history", "interestingasfuck"];
+        // const subreddits = ["funny", "news", "history", "interestingasfuck"];
 
-        // Select a random word
-        const subreddit =
-          subreddits[Math.floor(Math.random() * subreddits.length)];
+        // // Select a random word
+        // const subreddit =
+        //   subreddits[Math.floor(Math.random() * subreddits.length)];
 
         console.log("Selected subreddit:", subreddit);
         const titles = await fetchRecentPostTitles(context, subreddit);
@@ -543,19 +555,6 @@ Devvit.addCustomPostType({
             userCount: 0,
           }));
 
-        // Add "End Story" cell from round 3 onwards
-        // const gameRoundKey = `subwords_${context.postId}_game_round`;
-        // const currentRound = parseInt(
-        //   (await context.redis.get(gameRoundKey)) || "1"
-        // );
-
-        // if (currentRound >= 3) {
-        //   cellsWithCounts.push({
-        //     word: 'END STORY',
-        //     userCount: 0
-        //   });
-        // }
-
         // Store initial words in Redis
         await context.redis.set(
           `subwords_${context.postId}`,
@@ -564,16 +563,6 @@ Devvit.addCustomPostType({
             expiration: new Date(Date.now() + 86400000), // 24 hours from now
           }
         );
-
-        // Check if we have enough words
-        // if (cellsWithCounts.length === 0) {
-        //   // Game over scenario: no more words available
-        //   await context.redis.set(
-        //     `subwords_${context.postId}_game_status`,
-        //     "GAME_OVER"
-        //   );
-        //   return [{ word: "GAME OVER", userCount: 0 }];
-        // }
 
         return cellsWithCounts;
       } catch (error) {
@@ -971,6 +960,7 @@ Devvit.addCustomPostType({
             timeRemaining: 30, // Add time remaining
             fontUrl: fontUrl,
             timerUrl: timerUrl,
+            subreddit: subreddit,
           },
         });
       }
@@ -992,15 +982,33 @@ Devvit.addCustomPostType({
             />
             <vstack alignment="middle center" width="100%" height="100%">
               <spacer height="60%" />
-              <button
-                onPress={onStartGame}
-                appearance="primary"
-                size="large"
-                icon="play"
-                textColor="white"
-              >
-                Start Game
-              </button>
+              {status === "GAME_OVER" ? (
+                <vstack backgroundColor="#F0FFFF" border="thick" borderColor="#00FFFF" cornerRadius="medium" padding="small" >
+                <text 
+                wrap
+                size="xxlarge"
+                weight="bold"
+                color="black"
+                alignment="center"
+                width="100%" 
+                style="heading"
+                outline="thick"                
+                >
+                    Game Over - Final Story{'\n\n'}
+                    {story}
+                </text>
+                </vstack>
+              ) : (
+                <button
+                  onPress={onStartGame}
+                  appearance="success"
+                  size="large"
+                  icon="play"
+                  textColor="white"
+                >
+                  Start Game
+                </button>
+              )}
               <spacer grow />
             </vstack>
           </zstack>

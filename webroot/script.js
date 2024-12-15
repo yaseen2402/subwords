@@ -415,18 +415,18 @@ class WordGuesserGame {
       subredditEl.classList.add("subreddit-display");
       
       const subredditText = document.createElement("span");
-      subredditText.textContent = this.subreddit;
+      subredditText.textContent = `r/${this.subreddit}`;
       
-      const questionIcon = document.createElement("span");
-      questionIcon.innerHTML = "❓";
-      questionIcon.classList.add("question-icon");
+      // const questionIcon = document.createElement("span");
+      // questionIcon.innerHTML = "❓";
+      // questionIcon.classList.add("question-icon");
       
       const tooltip = document.createElement("div");
       tooltip.classList.add("subreddit-tooltip");
       tooltip.textContent = `Words are taken from r/${this.subreddit}`;
       
       subredditEl.appendChild(subredditText);
-      subredditEl.appendChild(questionIcon);
+      // subredditEl.appendChild(questionIcon);
       subredditEl.appendChild(tooltip);
       
       document.getElementById("game-round-container").appendChild(subredditEl);
