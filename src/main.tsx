@@ -11,7 +11,7 @@ import {
 
 const MAX_JOBS = 10;
 const JOB_LIST_KEY = "active_job_list";
-const MAX_ROUNDS = 5;
+const MAX_ROUNDS = 6;
 
 type WordData = {
   word: string;
@@ -504,7 +504,7 @@ Devvit.addCustomPostType({
 
       // If no words, generate dynamically
       try {
-        const subreddits = ["funny", "news", "technology", "anime"];
+        const subreddits = ["funny", "news", "history", "interestingasfuck"];
 
         // Select a random word
         const subreddit =
@@ -692,64 +692,64 @@ Devvit.addCustomPostType({
           }
 
           break;
-        case "restartGame":
-          // Reset game state
-          await context.redis.del(`subwords_${context.postId}`);
-          await context.redis.del(`subwords_${context.postId}_all_words`);
-          await context.redis.del(`subwords_${context.postId}_story`);
-          await context.redis.del(`subwords_${context.postId}_game_status`);
-          await context.redis.del(`subwords_${context.postId}_game_round`);
+        // case "restartGame":
+        //   // Reset game state
+        //   await context.redis.del(`subwords_${context.postId}`);
+        //   await context.redis.del(`subwords_${context.postId}_all_words`);
+        //   await context.redis.del(`subwords_${context.postId}_story`);
+        //   await context.redis.del(`subwords_${context.postId}_game_status`);
+        //   await context.redis.del(`subwords_${context.postId}_game_round`);
 
-          // Regenerate words
-          const titles = await fetchRecentPostTitles(context, "funny");
-          const generatedWords = await generateWordsFromTitles(context, titles);
+        //   // Regenerate words
+        //   const titles = await fetchRecentPostTitles(context, "funny");
+        //   const generatedWords = await generateWordsFromTitles(context, titles);
 
-          const initialWords = generatedWords.slice(0, 10);
-          await context.redis.set(
-            `subwords_${context.postId}_all_words`,
-            generatedWords.slice(10).join(","),
-            {
-              expiration: new Date(Date.now() + 86400000), // 24 hours from now
-            }
-          );
+        //   const initialWords = generatedWords.slice(0, 10);
+        //   await context.redis.set(
+        //     `subwords_${context.postId}_all_words`,
+        //     generatedWords.slice(10).join(","),
+        //     {
+        //       expiration: new Date(Date.now() + 86400000), // 24 hours from now
+        //     }
+        //   );
 
-          const cellsWithCounts: WordData[] = initialWords
-            .filter(
-              (word: string | undefined): word is string =>
-                word !== undefined && word.trim() !== ""
-            )
-            .map((word) => ({
-              word,
-              userCount: 0,
-            }));
+        //   const cellsWithCounts: WordData[] = initialWords
+        //     .filter(
+        //       (word: string | undefined): word is string =>
+        //         word !== undefined && word.trim() !== ""
+        //     )
+        //     .map((word) => ({
+        //       word,
+        //       userCount: 0,
+        //     }));
 
-          await context.redis.set(
-            `subwords_${context.postId}`,
-            initialWords.join(","),
-            {
-              expiration: new Date(Date.now() + 86400000), // 24 hours from now
-            }
-          );
-          await context.redis.set(
-            `subwords_${context.postId}_game_round`,
-            "1",
-            {
-              expiration: new Date(Date.now() + 86400000), // 24 hours from now
-            }
-          );
+        //   await context.redis.set(
+        //     `subwords_${context.postId}`,
+        //     initialWords.join(","),
+        //     {
+        //       expiration: new Date(Date.now() + 86400000), // 24 hours from now
+        //     }
+        //   );
+        //   await context.redis.set(
+        //     `subwords_${context.postId}_game_round`,
+        //     "1",
+        //     {
+        //       expiration: new Date(Date.now() + 86400000), // 24 hours from now
+        //     }
+        //   );
 
-          // Notify webview with new game state
-          context.ui.webView.postMessage("myWebView", {
-            type: "initialData",
-            data: {
-              username: username,
-              currentCells: cellsWithCounts,
-              story: "",
-              gameRound: 1,
-              timeRemaining: 30,
-            },
-          });
-          break;
+        //   // Notify webview with new game state
+        //   context.ui.webView.postMessage("myWebView", {
+        //     type: "initialData",
+        //     data: {
+        //       username: username,
+        //       currentCells: cellsWithCounts,
+        //       story: "",
+        //       gameRound: 1,
+        //       timeRemaining: 30,
+        //     },
+        //   });
+        //   break;
         case "saveCells":
           // Process only the newly selected cells
           const existingCellsStr =

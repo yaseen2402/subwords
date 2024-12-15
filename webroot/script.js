@@ -474,8 +474,23 @@ class WordGuesserGame {
 
     document.getElementById("confirm").addEventListener("click", async () => {
       try {
+        const selectedCells = Array.from(
+          document.querySelectorAll(".cell.selected")
+        )
+          .map((cell) => cell.dataset.word)
+          .filter(Boolean);
+        // Check if no cell is selected
+        if (selectedCells.length === 0) {
+          const toast = document.getElementById('toast');
+          toast.textContent = "Please select a word first";
+          toast.classList.add('show');
+          setTimeout(() => {
+            toast.classList.remove('show');
+          }, 2500);
+          return;
+        }
+        
         // Get all selected cells
-
         window.parent?.postMessage(
           {
             type: "btnTrigger",
@@ -501,22 +516,7 @@ class WordGuesserGame {
           }, 2500);
           return;
         }
-        const selectedCells = Array.from(
-          document.querySelectorAll(".cell.selected")
-        )
-          .map((cell) => cell.dataset.word)
-          .filter(Boolean);
 
-        // Check if no cell is selected
-        if (selectedCells.length === 0) {
-          const toast = document.getElementById('toast');
-          toast.textContent = "Please select a word first";
-          toast.classList.add('show');
-          setTimeout(() => {
-            toast.classList.remove('show');
-          }, 2500);
-          return;
-        }
 
         // Notify Devvit to sync state with ONLY the newly selected cells
         window.parent?.postMessage(

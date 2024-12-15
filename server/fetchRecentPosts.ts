@@ -95,7 +95,6 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
     From these Reddit post titles: ${titles.join(', ')}
     Select 10 words focusing on .
     - **Proper Nouns:** (e.g., names, places)
-    - **Terms related to fantasy, science fiction, or action.** 
     - **Unique or evocative words.**
 
     STRICT RULES:

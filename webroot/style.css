@@ -30,7 +30,7 @@ body {
   background-color: rgba(255, 255, 255, 0.9);
   min-height: 60px;
   height: auto;
-  width: 100px;
+  min-width: 120px;
   padding: 8px 8px;
   font-size: 16px;
   text-align: center;
@@ -133,6 +133,11 @@ button:hover::after {
 }
 
 
+@font-face {
+  font-family: 'arcade';
+  src: url('fonts/ARCADECLASSIC.TTF'); 
+}
+
 #story {
   font-weight: bold;
   color: #ffffff;
@@ -183,6 +188,7 @@ button:hover::after {
 }
 
 .game-round {
+  font-family: 'arcade', sans-serif;
   font-weight: bold;
   color: #ffffff;
   font-size: 20px;
