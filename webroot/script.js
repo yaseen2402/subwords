@@ -12,6 +12,8 @@ class WordGuesserGame {
     this.currentCells = [];
     this.gameRound = 1;
     this.canVote = ""
+    this.fontUrl = ""
+    this.timerUrl = ""
     this.channel = new BroadcastChannel("game_updates");
 
     this.initGame();
@@ -38,16 +40,20 @@ class WordGuesserGame {
           console.log("going inside the nested message", message.data);
 
           if (message.type === "initialData") {
-            const { username, currentCells, story, gameRound } = message.data;
+            const { username, currentCells, story, gameRound, fontUrl, timerUrl } = message.data;
             console.log("Initial data:", {
               username,
               currentCells,
               story,
               gameRound,
+              fontUrl,
+              timerUrl
             });
             this.username = username;
             this.currentCells = currentCells || [];
             this.gameRound = gameRound || 1;
+            this.fontUrl = fontUrl
+            this.timerUrl = timerUrl
 
             // Set words from currentCells before creating grid
             this.words = this.currentCells.map((cell) => cell.word);
@@ -66,11 +72,11 @@ class WordGuesserGame {
             this.startCountdownTimer(30);
           }
 
-          if (message.type === "storyCompleted") {
-            const { story } = message.data;
-            this.storyElement.innerText = story;
-            this.showStoryCompletedScreen();
-          }
+          // if (message.type === "storyCompleted") {
+          //   const { story } = message.data;
+          //   this.storyElement.innerText = story;
+          //   this.showStoryCompletedScreen();
+          // }
 
           if (message.type === "voteStatus") {
             const { canVote } = message.data;
@@ -177,6 +183,14 @@ class WordGuesserGame {
   // Create the grid of words
   createGrid() {
     this.gridContainer.innerHTML = "";
+    const logo = document.getElementById("timer-logo");
+    logo.src = this.timerUrl;
+    logo.style.width = "30px";
+    logo.style.height = "30px";
+    document.body.style.backgroundSize = "cover"; // Adjust to make the image cover the entire background
+    document.body.style.backgroundRepeat = "no-repeat"; // Prevent tiling
+    document.body.style.backgroundPosition = "center"; // Center the image
+
 
     this.words.forEach((word, index) => {
       const cell = document.createElement("div");
@@ -198,8 +212,9 @@ class WordGuesserGame {
     if (data && (data.expandedWord || data.word)) {
       // Prefer expandedWord, fallback to word
       const wordToAppend = data.expandedWord || data.word;
-
+      console.log("font Url is ", this.fontUrl)
       // Append the full word to the story
+      this.storyElement.style.fontFamily = this.fontUrl, "sans-serif";
       const currentStory = this.storyElement.innerText;
       const updatedStory = `${currentStory} ${wordToAppend}`.trim();
       this.storyElement.innerText = updatedStory;
@@ -356,37 +371,6 @@ class WordGuesserGame {
         this.countdownElement.style.color = "#ff0000"; // Ensure red
       }
     }, 1000);
-  }
-
-  showGameOverScreen() {
-    // Create a game over overlay
-    const gameOverOverlay = document.createElement("div");
-    gameOverOverlay.id = "game-over-overlay";
-    gameOverOverlay.innerHTML = `
-      <div class="game-over-content">
-        <h1>Game Over</h1>
-        <p>Final Story</p>
-        <div class="final-story-text">${this.storyElement.innerText}</div>
-      </div>
-    `;
-
-    // Style the overlay
-    gameOverOverlay.style.position = "fixed";
-    gameOverOverlay.style.top = "0";
-    gameOverOverlay.style.left = "0";
-    gameOverOverlay.style.width = "100%";
-    gameOverOverlay.style.height = "100%";
-    gameOverOverlay.style.backgroundColor = "rgba(0,0,0,0.9)";
-    gameOverOverlay.style.display = "flex";
-    gameOverOverlay.style.justifyContent = "center";
-    gameOverOverlay.style.alignItems = "center";
-    gameOverOverlay.style.zIndex = "1000";
-    gameOverOverlay.style.color = "white";
-    gameOverOverlay.style.padding = "20px";
-    gameOverOverlay.style.textAlign = "center";
-
-    // Add to body
-    document.body.appendChild(gameOverOverlay);
   }
 
   resetVoteStatusPromise() {

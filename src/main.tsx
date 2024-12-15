@@ -26,6 +26,9 @@ type WebViewMessage =
         currentCells: WordData[];
         story: string;
         gameRound: number;
+        timeRemaining: number;
+        fontUrl: string;
+        timerUrl: string;
       };
     }
   | {
@@ -80,8 +83,9 @@ Devvit.addSchedulerJob({
   onRun: async (event, context) => {
     await context.redis.set(
       `subwords_${context.postId}_${context.reddit.getCurrentUser()}_canVote`,
-      "true", {
-        expiration: new Date(Date.now() + 86400000) // 24 hours from now
+      "true",
+      {
+        expiration: new Date(Date.now() + 86400000), // 24 hours from now
       }
     );
     if (!event.data?.postId) {
@@ -146,8 +150,9 @@ Devvit.addSchedulerJob({
         // Reset votes for the used word
         await context.redis.set(
           `subwords_${postId}_${mostVotedWord}_votes`,
-          "0", {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          "0",
+          {
+            expiration: new Date(Date.now() + 86400000), // 24 hours from now
           }
         );
 
@@ -160,7 +165,7 @@ Devvit.addSchedulerJob({
 
         const newRound = currentRound + 1;
         await context.redis.set(gameRoundKey, newRound.toString(), {
-          expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          expiration: new Date(Date.now() + 86400000), // 24 hours from now
         });
 
         // Always increment and save the round when a most voted word is processed
@@ -262,19 +267,28 @@ Devvit.addSchedulerJob({
         // COMPLETELY replace existing cells in Redis
         await context.redis.set(
           `subwords_${postId}`,
-          newCells.map((cell) => cell.word).join(","), {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          newCells.map((cell) => cell.word).join(","),
+          {
+            expiration: new Date(Date.now() + 86400000), // 24 hours from now
           }
         );
 
         // Reset all vote counts for new words
         for (const cell of newCells) {
-          await context.redis.set(`subwords_${postId}_${cell.word}_votes`, "0", {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
-          });
-          await context.redis.set(`subwords_${postId}_${cell.word}_users`, "0", {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
-          });
+          await context.redis.set(
+            `subwords_${postId}_${cell.word}_votes`,
+            "0",
+            {
+              expiration: new Date(Date.now() + 86400000), // 24 hours from now
+            }
+          );
+          await context.redis.set(
+            `subwords_${postId}_${cell.word}_users`,
+            "0",
+            {
+              expiration: new Date(Date.now() + 86400000), // 24 hours from now
+            }
+          );
         }
 
         // Broadcast cell update with new words
@@ -469,14 +483,16 @@ Devvit.addCustomPostType({
           const updatedCells = [...existingCells, ...newWords];
           await context.redis.set(
             `subwords_${context.postId}`,
-            updatedCells.join(","), {
-              expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            updatedCells.join(","),
+            {
+              expiration: new Date(Date.now() + 86400000), // 24 hours from now
             }
           );
           await context.redis.set(
             `subwords_${context.postId}_all_words`,
-            allWords.slice(5 - cellsWithCounts.length).join(","), {
-              expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            allWords.slice(5 - cellsWithCounts.length).join(","),
+            {
+              expiration: new Date(Date.now() + 86400000), // 24 hours from now
             }
           );
 
@@ -491,7 +507,8 @@ Devvit.addCustomPostType({
         const subreddits = ["funny", "news", "technology", "anime"];
 
         // Select a random word
-        const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
+        const subreddit =
+          subreddits[Math.floor(Math.random() * subreddits.length)];
 
         console.log("Selected subreddit:", subreddit);
         const titles = await fetchRecentPostTitles(context, subreddit);
@@ -503,14 +520,16 @@ Devvit.addCustomPostType({
         // Store remaining words in Redis for future use
         await context.redis.set(
           `subwords_${context.postId}_all_words`,
-          generatedWords.slice(10).join(","), {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          generatedWords.slice(10).join(","),
+          {
+            expiration: new Date(Date.now() + 86400000), // 24 hours from now
           }
         );
         await context.redis.set(
           `subwords_${context.postId}_total_words`,
-          generatedWords.join(","), {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          generatedWords.join(","),
+          {
+            expiration: new Date(Date.now() + 86400000), // 24 hours from now
           }
         );
 
@@ -540,8 +559,9 @@ Devvit.addCustomPostType({
         // Store initial words in Redis
         await context.redis.set(
           `subwords_${context.postId}`,
-          initialWords.join(","), {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+          initialWords.join(","),
+          {
+            expiration: new Date(Date.now() + 86400000), // 24 hours from now
           }
         );
 
@@ -573,7 +593,7 @@ Devvit.addCustomPostType({
         (await context.redis.get(`subwords_${context.postId}_story`)) || "";
       return redisStory;
     });
- 
+
     // Set up periodic word voting check
 
     const [webviewVisible, setWebviewVisible] = useState(false);
@@ -652,8 +672,9 @@ Devvit.addCustomPostType({
 
             await context.redis.set(
               `subwords_${context.postId}_${username}_canVote`,
-              "false", {
-                expiration: new Date(Date.now() + 86400000) // 24 hours from now
+              "false",
+              {
+                expiration: new Date(Date.now() + 86400000), // 24 hours from now
               }
             );
             console.log(
@@ -686,8 +707,9 @@ Devvit.addCustomPostType({
           const initialWords = generatedWords.slice(0, 10);
           await context.redis.set(
             `subwords_${context.postId}_all_words`,
-            generatedWords.slice(10).join(","), {
-              expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            generatedWords.slice(10).join(","),
+            {
+              expiration: new Date(Date.now() + 86400000), // 24 hours from now
             }
           );
 
@@ -703,14 +725,20 @@ Devvit.addCustomPostType({
 
           await context.redis.set(
             `subwords_${context.postId}`,
-            initialWords.join(","), {
-              expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            initialWords.join(","),
+            {
+              expiration: new Date(Date.now() + 86400000), // 24 hours from now
             }
           );
-          await context.redis.set(`subwords_${context.postId}_game_round`, "1", {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
-          });
+          await context.redis.set(
+            `subwords_${context.postId}_game_round`,
+            "1",
+            {
+              expiration: new Date(Date.now() + 86400000), // 24 hours from now
+            }
+          );
 
+          
           // Notify webview with new game state
           context.ui.webView.postMessage("myWebView", {
             type: "initialData",
@@ -719,7 +747,7 @@ Devvit.addCustomPostType({
               currentCells: cellsWithCounts,
               story: "",
               gameRound: 1,
-              timeRemaining: 30, // Reset timer to 30 seconds
+              timeRemaining: 30, 
             },
           });
           break;
@@ -757,11 +785,11 @@ Devvit.addCustomPostType({
                 : voteCount;
 
               await context.redis.set(key, updatedUserCount.toString(), {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
-          });
+                expiration: new Date(Date.now() + 86400000), // 24 hours from now
+              });
               await context.redis.set(voteKey, updatedVoteCount.toString(), {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
-          });
+                expiration: new Date(Date.now() + 86400000), // 24 hours from now
+              });
 
               return {
                 word,
@@ -827,8 +855,9 @@ Devvit.addCustomPostType({
         case "resetCanVote":
           await context.redis.set(
             `subwords_${context.postId}_${username}_canVote`,
-            "true", {
-              expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            "true",
+            {
+              expiration: new Date(Date.now() + 86400000), // 24 hours from now
             }
           );
           console.log(`setting the vote count value of ${username} to true`);
@@ -863,7 +892,7 @@ Devvit.addCustomPostType({
           );
           const newVoteCount = currentVotes + 1;
           await context.redis.set(voteKey, newVoteCount.toString(), {
-            expiration: new Date(Date.now() + 86400000) // 24 hours from now
+            expiration: new Date(Date.now() + 86400000), // 24 hours from now
           });
 
           console.log("Word voted:", {
@@ -886,8 +915,9 @@ Devvit.addCustomPostType({
     const onStartGame = async () => {
       await context.redis.set(
         `subwords_${context.postId}_${username}_canVote`,
-        "true", {
-          expiration: new Date(Date.now() + 86400000) // 24 hours from now
+        "true",
+        {
+          expiration: new Date(Date.now() + 86400000), // 24 hours from now
         }
       );
       const initialVoteStatusCheck = await context.redis.get(
@@ -927,7 +957,11 @@ Devvit.addCustomPostType({
         const currentRound = parseInt(
           (await context.redis.get(gameRoundKey)) || "1"
         );
+        const fontUrl = await context.assets.getURL("ARCADECLASSIC.TTF");
+        console.log("font url is: ", fontUrl)
 
+        const timerUrl = await context.assets.getURL("timer-icon.png");
+        console.log("bg url is: ", timerUrl)
         context.ui.webView.postMessage("myWebView", {
           type: "initialData",
           data: {
@@ -936,26 +970,43 @@ Devvit.addCustomPostType({
             story: story,
             gameRound: currentRound,
             timeRemaining: 30, // Add time remaining
+            fontUrl: fontUrl,
+            timerUrl: timerUrl
           },
         });
       }
-      const fontUrl = await context.assets.getURL('your-google-font.woff2');
+      
     };
     return (
-      <vstack grow padding="small" >
-        <zstack width="100%" height="100%">
-        <image url="substory.png" imageWidth={100} imageHeight={100} width="100%" height="100%" />
+      <vstack grow padding="small">
         <vstack
           grow={!webviewVisible}
           height={webviewVisible ? "0%" : "100%"}
           alignment="middle center"
         >
-          <text size="xlarge" weight="bold">
-            SubWords
-          </text>
-          <button onPress={onStartGame}>Start</button>
+          <zstack width="100%" height="100%">
+            <image
+              url="substory.png"
+              imageWidth={100}
+              imageHeight={100}
+              width="100%"
+              height="100%"
+            />
+            <vstack alignment="middle center" width="100%" height="100%">
+            <spacer height="60%"/>
+              <button
+                onPress={onStartGame}
+                appearance="primary"
+                size="large"
+                icon="play"
+                textColor="white"
+              >
+                Start Game
+              </button>
+              <spacer grow />
+            </vstack>
+          </zstack>
         </vstack>
-      </zstack>
         <vstack grow={webviewVisible} height={webviewVisible ? "100%" : "0%"}>
           <vstack
             border="thick"

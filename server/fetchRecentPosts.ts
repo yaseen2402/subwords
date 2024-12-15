@@ -103,7 +103,6 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
     - NO punctuation
     - NO list markers
     - Words must be UPPERCASE
-    - There should be atleats 1 article and 1 pronoun in those words.
       `;
 
   console.log('Generating words from titles:', {
@@ -114,8 +113,8 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
   const generatedWords = await useGemini(context, prompt);
 
   // Additional filtering and validation
-  const processedWords = generatedWords
-    // .map(word => word.trim().toUpperCase())
+  const processedWords = (generatedWords as string[])
+    .map((word: string) => word.trim().toUpperCase())
     // .filter(word => 
     //   word.length >= 4 && 
     //   word.length <= 10 && 
