@@ -357,13 +357,25 @@ class WordGuesserGame {
     storyCompletedOverlay.innerHTML = `
       <div class="story-completed-content">
         <div class="completion-header">
-          <h1>🎉 Story Complete! 🎉</h1>
-          <div class="completion-stars">
-            ⭐⭐⭐⭐⭐
+          <div class="completion-title">
+            <span class="sparkle">✨</span>
+            <h1>Epic Tale Complete!</h1>
+            <span class="sparkle">✨</span>
           </div>
+          <div class="completion-stars">
+            <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+          </div>
+          <div class="completion-subtitle">Your Masterpiece is Ready!</div>
         </div>
         <div class="scroll-container">
+          <div class="scroll-header">📖 Final Story</div>
           <div id="final-story-text" class="final-story"></div>
+        </div>
+        <div class="completion-footer">
+          <div class="completion-badge">
+            <span class="badge-icon">🏆</span>
+            <span class="badge-text">Story Master</span>
+          </div>
         </div>
       </div>
     `;
@@ -375,13 +387,13 @@ class WordGuesserGame {
       left: "0",
       width: "100%",
       height: "100%",
-      backgroundColor: "rgba(0,0,0,0.85)",
+      backgroundColor: "rgba(0,0,0,0.9)",
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
       zIndex: "1000",
       opacity: "0",
-      transition: "opacity 0.5s ease"
+      transition: "opacity 0.8s ease"
     });
 
     // Add to body and animate in
@@ -394,20 +406,27 @@ class WordGuesserGame {
     const finalStoryText = this.storyElement.innerText;
     const finalStoryElement = document.getElementById("final-story-text");
     
-    // Animate each word
+    // Animate each word with enhanced effects
     finalStoryText.split(" ").forEach((word, index) => {
       const wordSpan = document.createElement("span");
       wordSpan.textContent = word + " ";
+      wordSpan.className = "story-word";
       wordSpan.style.opacity = "0";
-      wordSpan.style.transform = "translateY(20px)";
-      wordSpan.style.transition = "all 0.5s ease";
-      wordSpan.style.transitionDelay = `${index * 0.1}s`;
+      wordSpan.style.transform = "translateY(20px) scale(0.95)";
+      wordSpan.style.transition = "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)";
+      wordSpan.style.transitionDelay = `${index * 0.08}s`;
       finalStoryElement.appendChild(wordSpan);
       
       setTimeout(() => {
         wordSpan.style.opacity = "1";
-        wordSpan.style.transform = "translateY(0)";
-      }, 100 + index * 100);
+        wordSpan.style.transform = "translateY(0) scale(1)";
+      }, 100 + index * 80);
+    });
+
+    // Add sparkle animation to stars
+    const stars = storyCompletedOverlay.querySelectorAll('.completion-stars span');
+    stars.forEach((star, index) => {
+      star.style.animationDelay = `${index * 0.2}s`;
     });
   }
 
