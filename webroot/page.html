@@ -10,8 +10,10 @@
     <div id="game-container">
         <div id="game-round-container">
             <div id="game-round" class="game-round">Round: 1</div>
-            <div id="countdown-timer" class="countdown-timer">30</div>
-            <img id="timer-logo" class="timer-logo" alt="Logo" />
+            <div class="timer-container">
+                <img id="timer-logo" class="timer-logo" alt="Logo" />
+                <div id="countdown-timer" class="countdown-timer">30</div>
+            </div>
         </div>
         <p id="story"></p>
         <div id="grid"></div>
@@ -19,12 +21,24 @@
     </div>
     <script type="application/javascript" src="script.js"></script>
   <style>
+    .timer-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+      padding: 8px 20px;
+      border-radius: 25px;
+      margin: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      border: 2px solid rgba(253, 187, 45, 0.5);
+    }
+
     .countdown-timer {
       font-size: 24px;
-      color: #ff4500;
+      color: #ffffff;
       font-weight: bold;
-      text-align: right;
       margin-left: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     }
 
     .game-over-content {
