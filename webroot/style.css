@@ -217,6 +217,57 @@ button:hover::after {
   align-items: center;
   width: 100%;
   margin-bottom: 1px;
+  position: relative;
+}
+
+.subreddit-display {
+  font-family: 'arcade', sans-serif;
+  font-weight: bold;
+  color: #ffffff;
+  font-size: 16px;
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+  border-radius: 25px;
+  margin: 5px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+  border: 2px solid rgba(253, 187, 45, 0.5);
+}
+
+.question-icon {
+  margin-left: 10px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.question-icon:hover {
+  transform: scale(1.2);
+}
+
+.subreddit-tooltip {
+  visibility: hidden;
+  position: absolute;
+  bottom: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+  color: white;
+  padding: 10px;
+  border-radius: 10px;
+  z-index: 10;
+  opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  border: 2px solid rgba(253, 187, 45, 0.5);
+}
+
+.subreddit-display:hover .subreddit-tooltip {
+  visibility: visible;
+  opacity: 1;
 }
 
 
