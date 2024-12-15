@@ -266,12 +266,14 @@ button:hover::after {
   background: #fdbb2d;
   color: #1a2a6c;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
+  /* align-items: center;
+  justify-content: center; */
+  align-items: flex-end; /* Aligns the text to the bottom */
+  justify-content: flex-start; /* Aligns the text to the left */
+  font-size: 11px;
   font-weight: bold;
   box-shadow: 0 3px 6px rgba(0,0,0,0.3);
   z-index: 2;
