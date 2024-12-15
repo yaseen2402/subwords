@@ -355,30 +355,13 @@ class WordGuesserGame {
     const storyCompletedOverlay = document.createElement("div");
     storyCompletedOverlay.id = "story-completed-overlay";
     storyCompletedOverlay.innerHTML = `
-      <div class="story-completed-content">
-        <div class="completion-header">
-          <div class="completion-title">
-            <span class="sparkle">✨</span>
-            <h1>Epic Tale Complete!</h1>
-            <span class="sparkle">✨</span>
-          </div>
-          <div class="completion-stars">
-            <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
-          </div>
-          <div class="completion-subtitle">Your Masterpiece is Ready!</div>
-        </div>
         <div class="scroll-container">
           <div class="scroll-header">📖 Final Story</div>
           <div id="final-story-text" class="final-story"></div>
         </div>
-        <div class="completion-footer">
-          <div class="completion-badge">
-            <span class="badge-icon">🏆</span>
-            <span class="badge-text">Story Master</span>
-          </div>
-        </div>
-      </div>
+
     `;
+    
 
     // Style the overlay with animation
     Object.assign(storyCompletedOverlay.style, {
