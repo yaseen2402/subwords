@@ -333,23 +333,23 @@ class WordGuesserGame {
     // });
   }
 
-  // Synchronize countdown timer across all clients
-  syncCountdownTimer(seconds) {
-    // Broadcast timer start to all clients
-    window.parent?.postMessage(
-      {
-        type: "syncTimer",
-        data: {
-          seconds: seconds,
-          timestamp: Date.now(),
-        },
-      },
-      "*"
-    );
+  // // Synchronize countdown timer across all clients
+  // syncCountdownTimer(seconds) {
+  //   // Broadcast timer start to all clients
+  //   window.parent?.postMessage(
+  //     {
+  //       type: "syncTimer",
+  //       data: {
+  //         seconds: seconds,
+  //         timestamp: Date.now(),
+  //       },
+  //     },
+  //     "*"
+  //   );
 
-    // Start local timer
-    this.startCountdownTimer(seconds);
-  }
+  //   // Start local timer
+  //   this.startCountdownTimer(seconds);
+  // }
 
   showStoryCompletedScreen() {
     const storyCompletedOverlay = document.createElement("div");
@@ -364,9 +364,6 @@ class WordGuesserGame {
         </div>
         <div class="scroll-container">
           <div id="final-story-text" class="final-story"></div>
-        </div>
-        <div class="completion-footer">
-          <span class="completion-badge">Story Master Achievement Unlocked!</span>
         </div>
       </div>
     `;
@@ -450,7 +447,7 @@ class WordGuesserGame {
 
       if (seconds <= 0) {
         clearInterval(this.countdownInterval);
-        this.countdownElement.textContent = "0";
+        this.countdownElement.textContent = "Overtime";
         this.countdownElement.style.color = "#ff0000"; // Ensure red
       }
     }, 1000);

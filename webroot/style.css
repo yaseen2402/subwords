@@ -28,8 +28,9 @@ body {
 
 .cell {
   background-color: rgba(255, 255, 255, 0.9);
-  padding: 20px 15px;
-  font-size: 18px;
+  height: 50px;
+  padding: 15px 10px;
+  font-size: 16px;
   text-align: center;
   border-radius: 15px;
   border: 3px solid transparent;
@@ -83,7 +84,7 @@ body {
 button {
   padding: 12px 30px;
   font-size: 18px;
-  margin: 10px;
+  margin: 5px;
   cursor: pointer;
   background: linear-gradient(135deg, #fdbb2d, #b21f1f);
   color: white;
@@ -129,10 +130,10 @@ button:hover::after {
   font-weight: bold;
   color: #ffffff;
   font-size: 18px;
-  padding: 20px;
+  padding: 10px;
   background: linear-gradient(135deg, rgba(26, 42, 108, 0.9), rgba(178, 31, 31, 0.9));
   border-radius: 15px;
-  margin: 15px;
+  margin: 5px;
   min-height: 80px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
   border: 2px solid rgba(253, 187, 45, 0.5);
@@ -149,7 +150,7 @@ button:hover::after {
   font-size: 14px;
   text-transform: uppercase;
   color: #fdbb2d;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
   letter-spacing: 1px;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
 }
@@ -181,7 +182,7 @@ button:hover::after {
   padding: 12px 25px;
   background: linear-gradient(135deg, #1a2a6c, #b21f1f);
   border-radius: 25px;
-  margin: 15px;
+  margin: 5px;
   display: inline-block;
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
   text-transform: uppercase;
@@ -202,7 +203,7 @@ button:hover::after {
   justify-content: center;
   align-items: center;
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 1px;
 }
 
 
@@ -244,7 +245,7 @@ button:hover::after {
 }
 
 .completion-header {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .completion-header h1 {
@@ -293,7 +294,7 @@ button:hover::after {
 
 .story-container {
   width: 100%;
-  padding: 10px;
+  padding: 5px;
   position: relative;
 }
 
