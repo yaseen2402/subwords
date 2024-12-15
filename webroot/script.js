@@ -400,12 +400,41 @@ class WordGuesserGame {
   updateGameRoundDisplay() {
     // Create or update game round display
     let gameRoundEl = document.getElementById("game-round");
+    let subredditEl = document.getElementById("subreddit-display");
+    
     if (!gameRoundEl) {
       gameRoundEl = document.createElement("div");
       gameRoundEl.id = "game-round";
       gameRoundEl.classList.add("game-round");
       document.getElementById("game-container").prepend(gameRoundEl);
     }
+    
+    if (!subredditEl) {
+      subredditEl = document.createElement("div");
+      subredditEl.id = "subreddit-display";
+      subredditEl.classList.add("subreddit-display");
+      
+      const subredditText = document.createElement("span");
+      subredditText.textContent = this.subreddit;
+      
+      const questionIcon = document.createElement("span");
+      questionIcon.innerHTML = "❓";
+      questionIcon.classList.add("question-icon");
+      
+      const tooltip = document.createElement("div");
+      tooltip.classList.add("subreddit-tooltip");
+      tooltip.textContent = `Words are taken from r/${this.subreddit}`;
+      
+      subredditEl.appendChild(subredditText);
+      subredditEl.appendChild(questionIcon);
+      subredditEl.appendChild(tooltip);
+      
+      document.getElementById("game-round-container").appendChild(subredditEl);
+    } else {
+      const subredditText = subredditEl.querySelector("span:first-child");
+      subredditText.textContent = this.subreddit;
+    }
+    
     console.log("Updating game round display:", this.gameRound);
     gameRoundEl.textContent = `Round: ${this.gameRound}`;
   }
