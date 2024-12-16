@@ -445,31 +445,21 @@ Devvit.addCustomPostType({
     });
     const subreddits = ["funny", "news", "history"];
 
-    const [sub] = useState(async () => {
-      const currSub = await context.redis.get(
-        `subwords_${context.postId}_current_subreddit`
-      );
-      return currSub ?? "none";
+    const [subreddit, setSureddit] = useState<string>(() => {
+      const subreddits = ["funny", "news", "history"];
+      return subreddits[Math.floor(Math.random() * subreddits.length)];
     });
-
-    let subreddit: string | null = null;
-    // Select a random word
 
     // Initialize game state from Redis
     const [cells, setCells] = useState(async () => {
-      if (sub === "none") {
-        subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
-        await context.redis.set(
-          `subwords_${context.postId}_current_subreddit`,
-          subreddit,
-          {
-            expiration: new Date(Date.now() + 86400000),
-          }
-        );
-        console.log(`subreddit value inside the sub if condition is: ${subreddit}`)
-      } else {
-        subreddit = sub;
-      }
+      await context.redis.set(
+        `subwords_${context.postId}_current_subreddit`,
+        subreddit,
+        {
+          expiration: new Date(Date.now() + 86400000),
+        }
+      );
+      console.log(`Subreddit selected: ${subreddit}`);
       const redisCells =
         (await context.redis.get(`subwords_${context.postId}`)) || null;
       const allWordsStr =
@@ -917,7 +907,7 @@ Devvit.addCustomPostType({
 
         const timerUrl = await context.assets.getURL("timergif.gif");
         console.log("bg url is: ", timerUrl);
-        console.log(`subreddit value inside onStartGame is ${subreddit}`)
+        console.log(`Subreddit value in onStartGame: ${subreddit}`);
         context.ui.webView.postMessage("myWebView", {
           type: "initialData",
           data: {
@@ -928,7 +918,7 @@ Devvit.addCustomPostType({
             timeRemaining: 30, 
             fontUrl: fontUrl,
             timerUrl: timerUrl,
-            subreddit: subreddit,
+            subreddit: subreddit || 'default',
           },
         });
       }
