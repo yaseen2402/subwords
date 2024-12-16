@@ -5,7 +5,7 @@ Substory is a collaborative and interactive word game designed for Reddit users.
 
 ## How to Play
 
-1. **Start the Game**: Each game is hosted in a dedicated Reddit post, representing one story.
+1. **Start the Game**: Each game is hosted in a dedicated Reddit post, representing one story. Hence a new post needs to be created for each game session.
 
 2. **Round Structure**:
    - The game consists of **5 rounds**, with each round contributing to the evolving story.

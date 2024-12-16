@@ -143,8 +143,8 @@ button:hover::after {
 #story {
   font-weight: bold;
   color: #ffffff;
-  font-size: 18px;
-  padding: 10px;
+  font-size: 16px;
+  padding: 8px;
   background: linear-gradient(135deg, rgba(26, 42, 108, 0.9), rgba(178, 31, 31, 0.9));
   border-radius: 15px;
   margin: 5px;
