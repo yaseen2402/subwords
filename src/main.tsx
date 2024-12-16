@@ -443,7 +443,6 @@ Devvit.addCustomPostType({
       );
       return currStatus ?? "inGame";
     });
-    const subreddits = ["funny", "news", "history"];
 
     const [subreddit, setSureddit] = useState<string>(() => {
       const subreddits = ["funny", "news", "history"];
@@ -868,7 +867,6 @@ Devvit.addCustomPostType({
         "initial vote status for ",
         `${username} is: ${initialVoteStatusCheck}`
       );
-
 
       
 
