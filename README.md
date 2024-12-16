@@ -8,11 +8,12 @@ Substory is a collaborative and interactive word game designed for Reddit users.
 1. **Start the Game**: Each game is hosted in a dedicated Reddit post, representing one story. Hence a new post needs to be created for each game session.
 
 2. **Round Structure**:
-   - The game consists of **5 rounds**, with each round contributing to the evolving story.
+   - The game consists of **4 rounds**, with each round contributing to the evolving story.
    - In the **first round**, Substory fetches 8 words being actively discussed in popular subreddits. These words appear on the screen as options for players.
    - Players vote for their favorite word among the options.
    - Every **30 seconds**, the word with the most votes is added to the story.
    - After the chosen word is added, an AI generates appropriate connectors to ensure the story remains coherent.
+   - Sometimes the game may go into overtime in case no user has voted on any of the words, the game will proceed to next round only if there is atleast one vote on a word which can then be added to the story 
 
 3. **Subsequent Rounds**:
    - In each subsequent round, the word options presented are contextually relevant to the existing story.

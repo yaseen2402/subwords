@@ -26,7 +26,7 @@ body {
   padding: 10px;
 }
 
-.cell {
+/* .cell {
   background-color: rgba(255, 255, 255, 0.9);
   min-height: 60px;
   height: auto;
@@ -41,7 +41,7 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   position: relative;
   overflow-wrap: break-word;
-  word-break: break-word; /* Ensure proper word breaks */
+  word-break: break-word; 
   word-wrap: break-word;
   hyphens: auto;
   color: #2c3e50;
@@ -51,7 +51,37 @@ body {
   align-items: center;
   justify-content: center;
   text-overflow: ellipsis;
+} */
+.cell {
+  background-color: rgba(255, 255, 255, 0.9);
+  min-height: 60px;
+  height: auto;
+  min-width: 120px;
+  padding: 8px 8px;
+  font-size: 4vw; /* Use viewport width to adjust font size */
+  text-align: center;
+  border-radius: 15px;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+  color: #2c3e50;
+  font-weight: bold;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* Prevent wrapping */
+  overflow: hidden; /* Ensure text doesn't overflow the box */
+  max-width: 100%; /* Prevent width from exceeding container */
 }
+
 
 .cell:hover {
   transform: translateY(-5px) scale(1.02);
