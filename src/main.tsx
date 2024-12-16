@@ -444,21 +444,37 @@ Devvit.addCustomPostType({
       return currStatus ?? "inGame";
     });
 
-    const [subreddit, setSureddit] = useState<string>(() => {
-      const subreddits = ["funny", "news", "history"];
-      return subreddits[Math.floor(Math.random() * subreddits.length)];
-    });
+    const [subreddit, setSureddit] = useState(async () => {
+      // First, try to retrieve the existing subreddit from Redis
+      const storedSubreddit = await context.redis.get(
+        `subwords_${context.postId}_current_subreddit`
+      );
 
-    // Initialize game state from Redis
-    const [cells, setCells] = useState(async () => {
+      // If a subreddit is already stored, use it
+      if (storedSubreddit) {
+        console.log(`Retrieved existing subreddit: ${storedSubreddit}`);
+        return storedSubreddit;
+      }
+
+      // If no subreddit is stored, select a new one
+      const subreddits = ["funny", "news", "history"];
+      const newSubreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
+      
+      // Store the new subreddit in Redis
       await context.redis.set(
         `subwords_${context.postId}_current_subreddit`,
-        subreddit,
+        newSubreddit,
         {
           expiration: new Date(Date.now() + 86400000),
         }
       );
-      console.log(`Subreddit selected: ${subreddit}`);
+      console.log(`Selected new subreddit: ${newSubreddit}`);
+      return newSubreddit;
+    });
+
+    // Initialize game state from Redis
+    const [cells, setCells] = useState(async () => {
+      console.log(`Using subreddit: ${subreddit}`);
       const redisCells =
         (await context.redis.get(`subwords_${context.postId}`)) || null;
       const allWordsStr =
