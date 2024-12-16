@@ -27,59 +27,108 @@ export async function fetchRecentPostTitles(context: Context | TriggerContext, s
   }
 }
 
-export async function useGemini(context: TriggerContext, prompt: string) {
-  try {
-    const apiKey = await context.settings.get('gemini-api-key');
+export async function useGemini(context: TriggerContext, prompt: string, maxRetries = 3) {
+  const baseDelay = 1000; // 1 second initial delay
+  const maxDelay = 10000; // Maximum delay of 10 seconds
 
-    if (typeof apiKey !== 'string' || apiKey.trim() === '') {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const apiKey = await context.settings.get('gemini-api-key');
+
+      if (typeof apiKey !== 'string' || apiKey.trim() === '') {
         throw new Error('Gemini API key is not set or is invalid');
-    }
+      }
 
-    console.log('API Key Status: Key Present');
-    console.log('Full Prompt:', prompt);
+      console.log(`Gemini API Call Attempt ${attempt + 1}`);
+      console.log('Full Prompt:', prompt);
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
-      },
-      body: JSON.stringify({
-        contents: [{ 
-          parts: [{ text: prompt }],
-          role: 'user'
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 200,
-          topK: 40,
-          topP: 0.95
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        body: JSON.stringify({
+          contents: [{ 
+            parts: [{ text: prompt }],
+            role: 'user'
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 200,
+            topK: 40,
+            topP: 0.95
+          }
+        })
+      });
+
+      // Retry on network errors or server errors (5xx)
+      if (!response.ok) {
+        const errorText = await response.text();
+        const status = response.status;
+        
+        // Specific error handling
+        if (status === 429) {
+          console.warn('Rate limit exceeded. Retrying...');
+        } else if (status >= 500) {
+          console.warn(`Server error (${status}). Retrying...`);
+        } else {
+          throw new Error(`Gemini API Error: ${status} - ${errorText}`);
         }
-      })
-    });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API Error: ${response.status} - ${errorText}`);
+        // Exponential backoff with jitter
+        const delay = Math.min(
+          baseDelay * Math.pow(2, attempt) + Math.random() * 1000, 
+          maxDelay
+        );
+        
+        console.log(`Waiting ${delay}ms before retry`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+
+      const data = await response.json();
+      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      const words = generatedText
+        .split(/[,\s]+/)
+        .filter(word => word.trim().length > 0);
+      
+      console.log('Generated Words:', words);
+      
+      return words.length > 0 ? words : [
+        "THE", "OF", "AND", "A", "IN", 
+        "TO", "IS", "FOR", "WITH", "BY"
+      ];
+    } catch (error) {
+      console.error(`Gemini Generation Error (Attempt ${attempt + 1}):`, error);
+      
+      // On last retry, return fallback
+      if (attempt === maxRetries) {
+        console.error('All retry attempts failed. Using fallback words.');
+        return [
+          "THE", "OF", "AND", "A", "IN", 
+          "TO", "IS", "FOR", "WITH", "BY"
+        ];
+      }
+
+      // Exponential backoff with jitter for other errors
+      const delay = Math.min(
+        baseDelay * Math.pow(2, attempt) + Math.random() * 1000, 
+        maxDelay
+      );
+      
+      console.log(`Waiting ${delay}ms before retry due to error`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
-
-    const data = await response.json();
-    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
-    const words = generatedText
-      .split(/[,\s]+/)
-    console.log('Generated Words:', words);
-    return words.length > 0 ? words : [
-      "THE", "OF", "AND", "A", "IN", 
-      "TO", "IS", "FOR", "WITH", "BY"
-    ];
-  } catch (error) {
-    console.error('Gemini Generation Error:', error);
-    return [
-      "THE", "OF", "AND", "A", "IN", 
-      "TO", "IS", "FOR", "WITH", "BY"
-    ];
   }
+
+  // Fallback if somehow loop completes without returning
+  console.error('Unexpected failure in Gemini API call');
+  return [
+    "THE", "OF", "AND", "A", "IN", 
+    "TO", "IS", "FOR", "WITH", "BY"
+  ];
 }
 
 export async function generateWordsFromTitles(context: Context | TriggerContext, titles: string[]): Promise<string[]> {
