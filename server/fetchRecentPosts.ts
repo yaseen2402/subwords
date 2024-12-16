@@ -55,7 +55,7 @@ export async function useGemini(context: TriggerContext, prompt: string, maxRetr
           }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 200,
+            maxOutputTokens: 500,
             topK: 40,
             topP: 0.95
           }
@@ -92,7 +92,6 @@ export async function useGemini(context: TriggerContext, prompt: string, maxRetr
       
       const words = generatedText
         .split(/[,\s]+/)
-        .filter(word => word.trim().length > 0);
       
       console.log('Generated Words:', words);
       

@@ -432,7 +432,7 @@ class WordGuesserGame {
       document.getElementById("game-round-container").appendChild(subredditEl);
     } else {
       const subredditText = subredditEl.querySelector("span:first-child");
-      subredditText.textContent = this.subreddit;
+      subredditText.textContent = `r/${this.subreddit}`;
     }
     
     console.log("Updating game round display:", this.gameRound);

@@ -41,6 +41,7 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   position: relative;
   overflow-wrap: break-word;
+  word-break: break-word; /* Ensure proper word breaks */
   word-wrap: break-word;
   hyphens: auto;
   color: #2c3e50;
@@ -49,6 +50,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  text-overflow: ellipsis;
 }
 
 .cell:hover {

@@ -9,7 +9,7 @@ import {
   CompleteTheStory,
 } from "../server/fetchRecentPosts.js";
 
-const MAX_JOBS = 10;
+const MAX_JOBS = 5;
 const JOB_LIST_KEY = "active_job_list";
 const MAX_ROUNDS = 6;
 
@@ -238,10 +238,10 @@ Devvit.addSchedulerJob({
           expandedStory
         );
 
-        // console.log("Follow-up Word Generation:", {
-        //   expandedStory: expandedStory,
-        //   generatedWords: newFollowUpWords,
-        // });
+        console.log("Follow-up Word Generation:", {
+          expandedStory: expandedStory,
+          generatedWords: newFollowUpWords,
+        });
 
         // Filter out words already used in the story
         const usedWords = expandedStory.split(" ");
@@ -320,9 +320,9 @@ Devvit.addSchedulerJob({
           });
 
           // Fallback: Use Redis to store cell update
-          // await context.redis.set(`subwords_${postId}_backup_cells`,
-          //   JSON.stringify(newCells)
-          // );
+          await context.redis.set(`subwords_${postId}_backup_cells`,
+            JSON.stringify(newCells)
+          );
         }
 
         try {
@@ -457,7 +457,7 @@ Devvit.addCustomPostType({
       }
 
       // If no subreddit is stored, select a new one
-      const subreddits = ["funny", "news", "history"];
+      const subreddits = ["funny", "news", "history", "movies"];
       const newSubreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
       
       // Store the new subreddit in Redis
@@ -672,7 +672,7 @@ Devvit.addCustomPostType({
       },
     });
 
-    channel.subscribe();
+    // channel.subscribe();
     //receiving messages from webview
     const onMessage = async (msg: any) => {
       switch (msg.type) {
@@ -890,7 +890,6 @@ Devvit.addCustomPostType({
       setWebviewVisible(true);
       channel.subscribe();
       console.log("Channel subscribed");
-      // const finalStory = await context.redis.get(`subwords_${context.postId}_story`);
       const gameStatus = await context.redis.get(
         `subwords_${context.postId}_game_status`
       );
@@ -947,7 +946,7 @@ Devvit.addCustomPostType({
           <zstack width="100%" height="100%">
             {status === "GAME_OVER" ? (
               <image
-                url="gameover.png"
+                url="ssbg1.png"
                 imageWidth={100}
                 imageHeight={100}
                 width="100%"
