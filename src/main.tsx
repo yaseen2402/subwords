@@ -946,7 +946,7 @@ Devvit.addCustomPostType({
           <zstack width="100%" height="100%">
             {status === "GAME_OVER" ? (
               <image
-                url="ssbg1.png"
+                url="finalstory.png"
                 imageWidth={100}
                 imageHeight={100}
                 width="100%"
@@ -965,7 +965,7 @@ Devvit.addCustomPostType({
             <vstack alignment="middle center" width="100%" height="100%" padding="small">
               <spacer width="30%"/>
               {status === "GAME_OVER" ? (
-              <spacer height="40%" />
+              <spacer height="35%" />
               ):(
                 <spacer height="50%" />
               )}
