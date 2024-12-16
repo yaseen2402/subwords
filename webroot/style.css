@@ -329,7 +329,7 @@ button:hover::after {
   margin: 0;
   text-shadow: 3px 3px 6px rgba(0,0,0,0.4);
   background: linear-gradient(45deg, #fdbb2d, #ffd700);
-  -webkit-background-clip: text;
+  /* -webkit-background-clip: text; */
   -webkit-text-fill-color: transparent;
   animation: titleGlow 2s infinite alternate;
 }
