@@ -1,4 +1,4 @@
-import { Context, Subreddit, TriggerContext } from '@devvit/public-api';
+import { Context, TriggerContext } from '@devvit/public-api';
 
 export async function fetchRecentPostTitles(context: Context | TriggerContext, subreddit: string) {
   try {
@@ -68,14 +68,6 @@ export async function useGemini(context: TriggerContext, prompt: string) {
     
     const words = generatedText
       .split(/[,\s]+/)
-      // .map(word => word.trim().toUpperCase())
-      // .filter(word => 
-      //   word.length >= 2 && 
-      //   word.length <= 10 && 
-      //   /^[A-Z]+$/.test(word)
-      // )
-      // .slice(0, 10);
-
     console.log('Generated Words:', words);
     return words.length > 0 ? words : [
       "THE", "OF", "AND", "A", "IN", 
@@ -102,6 +94,7 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
     - NO punctuation
     - NO list markers
     - Words must be UPPERCASE
+    - DO NOT include any words that are vulgar, profane, or otherwise inappropriate.
       `;
 
   console.log('Generating words from titles:', {
@@ -114,12 +107,7 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
   // Additional filtering and validation
   const processedWords = (generatedWords as string[])
     .map((word: string) => word.trim().toUpperCase())
-    // .filter(word => 
-    //   word.length >= 4 && 
-    //   word.length <= 10 && 
-    //   /^[A-Z]+$/.test(word)
-    // )
-    // .slice(0, 10);
+    
 
   console.log('Processed words:', {
     originalCount: generatedWords.length,
@@ -140,85 +128,24 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
 }
 
 export async function generateConnectorWords(context: TriggerContext | Context, lastWord: string): Promise<string[]> {
-  // const prompt = `
-  //   Given the last word "${lastWord}", generate 1-3 diverse connector words.
-  //   Focus on creating natural, grammatically interesting transitions.
-    
-  //   CONNECTOR TYPES TO CONSIDER:
-  //   - Helping verbs that add nuance
-  //   - Prepositions that create spatial or temporal context
-  //   - Conjunctions that suggest causality or contrast
-  //   - Articles that refine the narrative focus
-    
-  //   STRICT RULES:
-  //   - NO numbers
-  //   - NO punctuation
-  //   - NO list markers
-  //   - Words must be UPPERCASE
-  //   - Prioritize variety and narrative flow
-  //   - Avoid repetitive or generic connectors
-  //   - Aim to add depth to the story's progression
-  // `;
 
-  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its your turn, give me a word or two to continue the sentence ${lastWord} 
+  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its your turn, give me a few wor to continue the sentence ${lastWord} 
   
   STRICT RULES:
+    - make sure that words you add form a coherent continuation of the exsiting sentence
     - Dont repeat the ${lastWord} in your response
     - Just give me the words to add to ${lastWord}
     - Words must be UPPERCASE
     `
   const connectorWords = await useGemini(context, prompt);
   console.log(connectorWords);  
-  // Predefined list of valid connectors
-  const validConnectors = [
-    // Helping Verbs
-    'IS', 'ARE', 'WAS', 'WERE', 'CAN', 'COULD', 'WILL', 'WOULD', 
-    'SHALL', 'SHOULD', 'MAY', 'MIGHT', 'MUST', 'HAVE', 'HAS', 'HAD',
-    
-    // Articles
-    'THE', 'A', 'AN', 
-
-    // Prepositions
-    'OF', 'WITH', 'IN', 'ON', 'AT', 'TO', 'FOR', 'BY', 'FROM', 
-    'UNDER', 'OVER', 'THROUGH', 'ACROSS', 'BETWEEN', 'AMONG',
-    
-    // Conjunctions
-    'AND', 'BUT', 'OR', 'YET', 'SO', 'BECAUSE', 'WHILE', 'SINCE'
-  ];
-
-  // Filter and validate connector words
-  const processedConnectors = connectorWords.filter((word: string) => 
-    validConnectors.includes(word)
-  );
-
-  // If no valid connectors found, return a minimal set
-  // return processedConnectors.length > 0 
-  //   ? processedConnectors.slice(0, 3)
-  //   : ['THE', 'OF', 'AND'].slice(0, 3);
+  
 
   return connectorWords;
 }
 
 export async function CompleteTheStory(context: TriggerContext | Context, lastWord: string): Promise<string[]> {
-  // const prompt = `
-  //   Given the last word "${lastWord}", generate 1-3 diverse connector words.
-  //   Focus on creating natural, grammatically interesting transitions.
-    
-  //   CONNECTOR TYPES TO CONSIDER:
-  //   - Helping verbs that add nuance
-  //   - Prepositions that create spatial or temporal context
-  //   - Conjunctions that suggest causality or contrast
-  //   - Articles that refine the narrative focus
-    
-  //   STRICT RULES:
-  //   - NO numbers
-  //   - NO punctuation
-  //   - NO list markers
-  //   - Words must be UPPERCASE
-  //   - Prioritize variety and narrative flow
-  //   - Avoid repetitive or generic connectors
-  //   - Aim to add depth to the story's progression
-  // `;
+  
 
   const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its your turn and its final turn so give me a few words to complete the sentence ${lastWord} 
   
@@ -229,51 +156,14 @@ export async function CompleteTheStory(context: TriggerContext | Context, lastWo
     `
   const connectorWords = await useGemini(context, prompt);
   console.log(connectorWords);  
-  // Predefined list of valid connectors
-  const validConnectors = [
-    // Helping Verbs
-    'IS', 'ARE', 'WAS', 'WERE', 'CAN', 'COULD', 'WILL', 'WOULD', 
-    'SHALL', 'SHOULD', 'MAY', 'MIGHT', 'MUST', 'HAVE', 'HAS', 'HAD',
-    
-    // Articles
-    'THE', 'A', 'AN', 
-
-    // Prepositions
-    'OF', 'WITH', 'IN', 'ON', 'AT', 'TO', 'FOR', 'BY', 'FROM', 
-    'UNDER', 'OVER', 'THROUGH', 'ACROSS', 'BETWEEN', 'AMONG',
-    
-    // Conjunctions
-    'AND', 'BUT', 'OR', 'YET', 'SO', 'BECAUSE', 'WHILE', 'SINCE'
-  ];
-
-  // Filter and validate connector words
-  const processedConnectors = connectorWords.filter((word: string) => 
-    validConnectors.includes(word)
-  );
-
-  // If no valid connectors found, return a minimal set
-  // return processedConnectors.length > 0 
-  //   ? processedConnectors.slice(0, 3)
-  //   : ['THE', 'OF', 'AND'].slice(0, 3);
 
   return connectorWords;
 }
 
 export async function generateFollowUpWords(context: TriggerContext | Context, currentStory: string): Promise<string[]> {
-  // const prompt = `
-  //   Given the current story context: "${currentStory}",
-  //   generate 10 unique, engaging words to continue the narrative.
-    
-  //   STRICT RULES:
-  //   - NO numbers
-  //   - NO punctuation
-  //   - NO list markers
-  //   - Words must be UPPERCASE
-  //   - Include diverse word types: nouns, verbs, adjectives
-  //   - Consider story context and potential narrative directions
-  // `;
+  
 
-  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its my turn, give me a exactly 10 word to choose from to continue the sentence, make sure to give me words with each one leading to potentially different scenarios  ${currentStory}
+  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its my turn, give me a exactly 8 words to choose from to continue the sentence, make sure to give me words with each one leading to potentially different interesting scenarios  ${currentStory}
     STRICT RULES:
     - NO numbers
     - NO punctuation
@@ -283,27 +173,10 @@ export async function generateFollowUpWords(context: TriggerContext | Context, c
   const followUpWords = await useGemini(context, prompt);
   
   const usedWords = currentStory.toUpperCase().split(' ');
-  // const uniqueFollowUpWords = followUpWords.filter((word: string) => 
-  //   !usedWords.includes(word) && word.length >= 2
-  // );
+  
   const uniqueFollowUpWords = followUpWords.filter((word: string) => 
     word.length >= 1
   );
-
-  
-  const fallbackWords = [
-    "ADVENTURE", "MYSTERY", "COURAGE", "DREAM", "JOURNEY", 
-    "HOPE", "CHALLENGE", "DISCOVERY", "WISDOM", "DESTINY",
-    "EPIC", "QUEST", "MAGIC", "HERO", "LEGEND"
-  ];
-
-  const combinedWords = [...new Set([...uniqueFollowUpWords, ...fallbackWords])]
-    .filter(word => !usedWords.includes(word))
-    .slice(0, 10);
-
-  // return combinedWords.length > 0 
-  //   ? uniqueFollowUpWords 
-  //   : fallbackWords.slice(0, 10);
 
   return uniqueFollowUpWords;
 
