@@ -443,13 +443,33 @@ Devvit.addCustomPostType({
       );
       return currStatus ?? "inGame";
     });
-    const subreddits = ["funny", "news", "history", "interestingasfuck"];
+    const subreddits = ["funny", "news", "history"];
 
+    const [sub] = useState(async () => {
+      const currSub = await context.redis.get(
+        `subwords_${context.postId}_current_subreddit`
+      );
+      return currSub ?? "none";
+    });
+
+    let subreddit: string | null = null;
     // Select a random word
-    const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
 
     // Initialize game state from Redis
     const [cells, setCells] = useState(async () => {
+      if (sub === "none") {
+        subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
+        await context.redis.set(
+          `subwords_${context.postId}_current_subreddit`,
+          subreddit,
+          {
+            expiration: new Date(Date.now() + 86400000),
+          }
+        );
+        console.log(`subreddit value inside the sub if condition is: ${subreddit}`)
+      } else {
+        subreddit = sub;
+      }
       const redisCells =
         (await context.redis.get(`subwords_${context.postId}`)) || null;
       const allWordsStr =
@@ -461,10 +481,10 @@ Devvit.addCustomPostType({
         (await context.redis.get(gameRoundKey)) || "1"
       );
 
-      console.log("Current Game Round:", {
-        gameRoundKey: gameRoundKey,
-        currentRound: currentRound,
-      });
+      // console.log("Current Game Round:", {
+      //   gameRoundKey: gameRoundKey,
+      //   currentRound: currentRound,
+      // });
 
       if (redisCells) {
         const existingCells = redisCells.split(",");
@@ -681,64 +701,7 @@ Devvit.addCustomPostType({
           }
 
           break;
-        // case "restartGame":
-        //   // Reset game state
-        //   await context.redis.del(`subwords_${context.postId}`);
-        //   await context.redis.del(`subwords_${context.postId}_all_words`);
-        //   await context.redis.del(`subwords_${context.postId}_story`);
-        //   await context.redis.del(`subwords_${context.postId}_game_status`);
-        //   await context.redis.del(`subwords_${context.postId}_game_round`);
 
-        //   // Regenerate words
-        //   const titles = await fetchRecentPostTitles(context, "funny");
-        //   const generatedWords = await generateWordsFromTitles(context, titles);
-
-        //   const initialWords = generatedWords.slice(0, 10);
-        //   await context.redis.set(
-        //     `subwords_${context.postId}_all_words`,
-        //     generatedWords.slice(10).join(","),
-        //     {
-        //       expiration: new Date(Date.now() + 86400000), // 24 hours from now
-        //     }
-        //   );
-
-        //   const cellsWithCounts: WordData[] = initialWords
-        //     .filter(
-        //       (word: string | undefined): word is string =>
-        //         word !== undefined && word.trim() !== ""
-        //     )
-        //     .map((word) => ({
-        //       word,
-        //       userCount: 0,
-        //     }));
-
-        //   await context.redis.set(
-        //     `subwords_${context.postId}`,
-        //     initialWords.join(","),
-        //     {
-        //       expiration: new Date(Date.now() + 86400000), // 24 hours from now
-        //     }
-        //   );
-        //   await context.redis.set(
-        //     `subwords_${context.postId}_game_round`,
-        //     "1",
-        //     {
-        //       expiration: new Date(Date.now() + 86400000), // 24 hours from now
-        //     }
-        //   );
-
-        //   // Notify webview with new game state
-        //   context.ui.webView.postMessage("myWebView", {
-        //     type: "initialData",
-        //     data: {
-        //       username: username,
-        //       currentCells: cellsWithCounts,
-        //       story: "",
-        //       gameRound: 1,
-        //       timeRemaining: 30,
-        //     },
-        //   });
-        //   break;
         case "saveCells":
           // Process only the newly selected cells
           const existingCellsStr =
@@ -915,6 +878,10 @@ Devvit.addCustomPostType({
         "initial vote status for ",
         `${username} is: ${initialVoteStatusCheck}`
       );
+
+
+      
+
       console.log("Starting game, subscribing to channel");
       setWebviewVisible(true);
       channel.subscribe();
@@ -950,6 +917,7 @@ Devvit.addCustomPostType({
 
         const timerUrl = await context.assets.getURL("timergif.gif");
         console.log("bg url is: ", timerUrl);
+        console.log(`subreddit value inside onStartGame is ${subreddit}`)
         context.ui.webView.postMessage("myWebView", {
           type: "initialData",
           data: {
@@ -957,7 +925,7 @@ Devvit.addCustomPostType({
             currentCells: cells,
             story: story,
             gameRound: currentRound,
-            timeRemaining: 30, // Add time remaining
+            timeRemaining: 30, 
             fontUrl: fontUrl,
             timerUrl: timerUrl,
             subreddit: subreddit,
@@ -973,41 +941,55 @@ Devvit.addCustomPostType({
           alignment="middle center"
         >
           <zstack width="100%" height="100%">
-            <image
-              url="bgsubstory.png"
-              imageWidth={100}
-              imageHeight={100}
-              width="100%"
-              height="100%"
-            />
-            <vstack alignment="middle center" width="100%" height="100%">
-              <spacer height="60%" />
+            {status === "GAME_OVER" ? (
+              <image
+                url="gameover.png"
+                imageWidth={100}
+                imageHeight={100}
+                width="100%"
+                height="100%"
+              />
+            ) : (
+              <image
+                url="ssbg.png"
+                imageWidth={100}
+                imageHeight={100}
+                width="100%"
+                height="100%"
+              />
+            )}
+
+            <vstack alignment="middle center" width="100%" height="100%" padding="small">
+              <spacer width="30%"/>
               {status === "GAME_OVER" ? (
-                <vstack backgroundColor="#F0FFFF" border="thick" borderColor="#00FFFF" cornerRadius="medium" padding="small" >
-                <text 
-                wrap
-                size="xxlarge"
-                weight="bold"
-                color="black"
-                alignment="center"
-                width="100%" 
-                style="heading"
-                outline="thick"                
-                >
-                    Game Over - Final Story{'\n\n'}
-                    {story}
-                </text>
+              <spacer height="40%" />
+              ):(
+                <spacer height="50%" />
+              )}
+              {status === "GAME_OVER" ? (
+                <vstack padding="small" width="70%">
+                  <text
+                    wrap
+                    size="xxlarge"
+                    weight="bold"
+                    color="black"
+                    alignment="center"
+                    width="100%"
+                    style="heading"
+                    outline="thick"
+                  >
+                    {`"${story}"`}
+                  </text>
                 </vstack>
               ) : (
-                <button
+                <vstack padding="small" >
+                <image
+                  url="start_gif.gif"
+                  imageWidth={240}
+                  imageHeight={120}
                   onPress={onStartGame}
-                  appearance="success"
-                  size="large"
-                  icon="play"
-                  textColor="white"
-                >
-                  Start Game
-                </button>
+                />
+                </vstack>
               )}
               <spacer grow />
             </vstack>
