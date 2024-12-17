@@ -202,31 +202,10 @@ Devvit.addSchedulerJob({
           console.log("Max rounds reached. stored GAME_OVER status in redis");
 
           try {
-            // Get the subreddit for this game
-            const gameSubreddit = await context.redis.get(
-              `subwords_${postId}_current_subreddit`
-            ) || 'anime';
-
-            // Get the final story background image
-            const finalStoryBgUrl = await context.assets.getURL('finalstory.png');
-
-            // Create a new post with the final story
-            const newPost = await context.reddit.submitPost({
-              subredditName: gameSubreddit,
-              title: `Collaborative Story: A Community Creation`,
-              body: `## 🌟 Our Collaborative Story 🌟\n\n${finalStory}`,
-              preview: {
-                url: finalStoryBgUrl
-              }
-            });
-
-            console.log("Created new post with final story:", newPost.id);
-
             await context.realtime.send("game_updates", {
               type: "gameOver",
               story: finalStory,
               gameStatus: "GAME_OVER",
-              newPostId: newPost.id
             });
           } catch (error) {
             console.error("Failed to create game over post", error);
@@ -477,8 +456,7 @@ Devvit.addCustomPostType({
       }
 
       // If no subreddit is stored, select a new one
-      const subreddits = ["anime"];
-      // const subreddits = ["funny", "news", "history", "movies"];
+      const subreddits = ["funny", "news", "history", "movies"];
       const newSubreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
       
       // Store the new subreddit in Redis

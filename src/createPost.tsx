@@ -13,7 +13,7 @@ Devvit.addMenuItem({
     const { reddit, ui } = context;
     const subreddit = await reddit.getCurrentSubreddit();
     const post = await reddit.submitPost({
-      title: "Let’s Build a Story Using Reddit’s Trending Words!",
+      title: "Add Your Word to Build the Tale!",
       subredditName: subreddit.name,
       // The preview appears while the post loads
       preview: (

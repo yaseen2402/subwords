@@ -9,7 +9,7 @@ export async function fetchRecentPostTitles(context: Context | TriggerContext, s
     const posts = await context.reddit.getNewPosts({
       subredditName: subreddit,
       // subredditName: subreddit.name,
-      limit: 30
+      limit: 20
     }).all();
     
     // Filter posts from the last 24 hours
@@ -134,7 +134,7 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
   const prompt = `
     From these Reddit post titles: ${titles.join(', ')}
     Select 10 words focusing on .
-    - **Proper Nouns:** (e.g., names, places)
+    - **Proper Nouns:** (e.g., names, places, events)
     - **Unique or evocative words.**
 
     STRICT RULES:
@@ -143,7 +143,10 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
     - NO list markers
     - Words must be UPPERCASE
     - DO NOT include any words that are vulgar, profane, or otherwise inappropriate.
-      `;
+
+    ADDITIONAL RULE:
+    - If a selected word consists of two parts (e.g., "DONALD TRUMP"), combine them with a hyphen (e.g., "DONALD-TRUMP").
+    `;
 
   console.log('Generating words from titles:', {
     titleCount: titles.length,
@@ -211,7 +214,7 @@ export async function CompleteTheStory(context: TriggerContext | Context, lastWo
 export async function generateFollowUpWords(context: TriggerContext | Context, currentStory: string): Promise<string[]> {
   
 
-  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its my turn, give me a exactly 8 words to choose from to continue the sentence, make sure to give me words with each one leading to potentially different funny, interesting or shocking scenarios  ${currentStory}
+  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its my turn, give me a exactly 8 words to choose from to continue the sentence, make sure to give me words with each one leading to potentially different cohesive scenarios for the existing story  ${currentStory}
     STRICT RULES:
     - NO numbers
     - NO punctuation
