@@ -96,8 +96,8 @@ export async function useGemini(context: TriggerContext, prompt: string, maxRetr
       console.log('Generated Words:', words);
       
       return words.length > 0 ? words : [
-        "THE", "OF", "AND", "A", "IN", 
-        "TO", "IS", "FOR", "WITH", "BY"
+        "THE", "OF", "AND", "BAD", "IN", 
+        "HAPPINESS", "SUDDENLY", "GOOD", "WITH", "BY"
       ];
     } catch (error) {
       console.error(`Gemini Generation Error (Attempt ${attempt + 1}):`, error);
@@ -106,8 +106,8 @@ export async function useGemini(context: TriggerContext, prompt: string, maxRetr
       if (attempt === maxRetries) {
         console.error('All retry attempts failed. Using fallback words.');
         return [
-          "THE", "OF", "AND", "A", "IN", 
-          "TO", "IS", "FOR", "WITH", "BY"
+          "THE", "OF", "AND", "BAD", "IN", 
+          "HAPPINESS", "SUDDENLY", "GOOD", "WITH", "BY"
         ];
       }
 
@@ -180,11 +180,11 @@ export async function generateWordsFromTitles(context: Context | TriggerContext,
 
 export async function generateConnectorWords(context: TriggerContext | Context, lastWord: string): Promise<string[]> {
 
-  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its your turn, give me a few wor to continue the sentence ${lastWord} 
+  const prompt = `Let's play a game where both of us try to form a sentence by taking turns and adding words to the story. Currently, it's your turn. give me a few words to continue the sentence ${lastWord} 
   
   STRICT RULES:
-    - make sure that words you add form a coherent continuation of the exsiting sentence
-    - Dont repeat the ${lastWord} in your response
+    - Make sure that words you add form a coherent continuation of the exsiting sentence
+    - Don't repeat the ${lastWord} in your response
     - Just give me the words to add to ${lastWord}
     - Words must be UPPERCASE
     `
@@ -198,12 +198,13 @@ export async function generateConnectorWords(context: TriggerContext | Context, 
 export async function CompleteTheStory(context: TriggerContext | Context, lastWord: string): Promise<string[]> {
   
 
-  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its your turn and its final turn so give me a few words to complete the sentence ${lastWord} 
+  const prompt = `Let's play a game where both of us try to form a sentence by taking turns and adding words to the story. Currently, it's your turn and its the final turn so give me a few words to complete the sentence ${lastWord} 
   
   STRICT RULES:
-    - Dont repeat the ${lastWord} in your response
+    - Don't repeat the ${lastWord} in your response
     - Just give me the words to add to ${lastWord} to complete the sentence
     - Words must be UPPERCASE
+    - Make sure your words complete the sentence
     `
   const connectorWords = await useGemini(context, prompt);
   console.log(connectorWords);  
@@ -214,12 +215,14 @@ export async function CompleteTheStory(context: TriggerContext | Context, lastWo
 export async function generateFollowUpWords(context: TriggerContext | Context, currentStory: string): Promise<string[]> {
   
 
-  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its my turn, give me a exactly 8 words to choose from to continue the sentence, make sure to give me words with each one leading to potentially different cohesive scenarios for the existing story  ${currentStory}
+  const prompt = `Let's play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its my turn, give me a exactly 8 words to choose from to continue the sentence, make sure to give me words with each one leading to potentially different cohesive scenarios for the existing story  ${currentStory}
     STRICT RULES:
     - NO numbers
     - NO punctuation
     - NO list markers
     - Words must be UPPERCASE
+    - Avoid repeating words already in the story
+    - Make sure the words fit cohesively and make sense with the context of the sentence
   `
   const followUpWords = await useGemini(context, prompt);
   

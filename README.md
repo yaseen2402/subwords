@@ -13,7 +13,7 @@ Substory is a collaborative and interactive word game designed for Reddit users.
    - Players vote for their favorite word among the options.
    - Every **30 seconds**, the word with the most votes is added to the story.
    - After the chosen word is added, an AI generates appropriate connectors to ensure the story remains coherent.
-   - Sometimes the game may go into overtime in case no user has voted on any of the words, the game will proceed to next round only if there is atleast one vote on a word which can then be added to the story 
+   - Sometimes the game may go into overtime in case no user has voted on any of the words, the game will proceed to next round only if there is atleast one vote on a word which can then be added to the story. The game may stay in overtime even after a vote has been added until the next vote check cycle.
 
 3. **Subsequent Rounds**:
    - In each subsequent round, the word options presented are contextually relevant to the existing story.
