@@ -11,7 +11,7 @@ import {
 
 const MAX_JOBS = 5;
 const JOB_LIST_KEY = "active_job_list";
-const MAX_ROUNDS = 4;
+const MAX_ROUNDS = 5;
 
 type WordData = {
   word: string;

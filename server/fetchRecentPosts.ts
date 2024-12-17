@@ -211,7 +211,7 @@ export async function CompleteTheStory(context: TriggerContext | Context, lastWo
 export async function generateFollowUpWords(context: TriggerContext | Context, currentStory: string): Promise<string[]> {
   
 
-  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its my turn, give me a exactly 8 words to choose from to continue the sentence, make sure to give me words with each one leading to potentially different interesting scenarios  ${currentStory}
+  const prompt = `lets play a game where both of us try to form a sentence by taking turns and adding words to the story, currently its my turn, give me a exactly 8 words to choose from to continue the sentence, make sure to give me words with each one leading to potentially different funny, interesting or shocking scenarios  ${currentStory}
     STRICT RULES:
     - NO numbers
     - NO punctuation
