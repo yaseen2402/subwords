@@ -180,7 +180,6 @@ Devvit.addSchedulerJob({
         // Check if max rounds reached
         if (newRound >= MAX_ROUNDS) {
           const upperMostVotedWord = mostVotedWord.toUpperCase();
-          // const connectorWords = await generateConnectorWords(context, upperMostVotedWord);
           const connectorWords = await CompleteTheStory(context, initialStory);
           console.log(
             `final story words received from ai are: ${connectorWords}`
@@ -200,16 +199,37 @@ Devvit.addSchedulerJob({
             `subwords_${postId}_game_status`,
             "GAME_OVER"
           );
-          console.log("Max rounds reached. stored GAME_OVER  status in redis");
+          console.log("Max rounds reached. stored GAME_OVER status in redis");
 
           try {
+            // Get the subreddit for this game
+            const gameSubreddit = await context.redis.get(
+              `subwords_${postId}_current_subreddit`
+            ) || 'anime';
+
+            // Get the final story background image
+            const finalStoryBgUrl = await context.assets.getURL('finalstory.png');
+
+            // Create a new post with the final story
+            const newPost = await context.reddit.submitPost({
+              subredditName: gameSubreddit,
+              title: `Collaborative Story: A Community Creation`,
+              body: `## 🌟 Our Collaborative Story 🌟\n\n${finalStory}`,
+              preview: {
+                url: finalStoryBgUrl
+              }
+            });
+
+            console.log("Created new post with final story:", newPost.id);
+
             await context.realtime.send("game_updates", {
               type: "gameOver",
               story: finalStory,
               gameStatus: "GAME_OVER",
+              newPostId: newPost.id
             });
           } catch (error) {
-            console.error("Failed to broadcast game over", error);
+            console.error("Failed to create game over post", error);
           }
           return;
         }
