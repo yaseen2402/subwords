@@ -13,9 +13,8 @@ Devvit.addMenuItem({
     const { reddit, ui } = context;
     const subreddit = await reddit.getCurrentSubreddit();
     const post = await reddit.submitPost({
-      title: "Add Your Word to Build the Tale!",
+      title: "Lets Build a SubStory Using Reddit’s Trending Words!",
       subredditName: subreddit.name,
-      // The preview appears while the post loads
       preview: (
         <vstack height="100%" width="100%" alignment="middle center">
           <image
