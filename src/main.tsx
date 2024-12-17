@@ -457,7 +457,8 @@ Devvit.addCustomPostType({
       }
 
       // If no subreddit is stored, select a new one
-      const subreddits = ["funny", "news", "history", "movies"];
+      const subreddits = ["anime"];
+      // const subreddits = ["funny", "news", "history", "movies"];
       const newSubreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
       
       // Store the new subreddit in Redis
@@ -921,6 +922,14 @@ Devvit.addCustomPostType({
         const timerUrl = await context.assets.getURL("timergif.gif");
         console.log("bg url is: ", timerUrl);
         console.log(`Subreddit value in onStartGame: ${subreddit}`);
+        const postId = await context.postId;
+        const post = await context.reddit.getPostById(postId!);
+        // await post.edit({ title: "a" });
+
+        // await context.reddit.editPost({
+        //   id: post.id,
+        //   title: newTitle
+        // });
         context.ui.webView.postMessage("myWebView", {
           type: "initialData",
           data: {
